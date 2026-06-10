@@ -2,9 +2,13 @@
 
 import api from "@/services/api";
 import { useEffect, useState } from "react";
+import CrudModal from "@/components/CrudModal";
 import { useAuthStore } from "@/services/store";
+import UserForm from "@/components/forms/userForm";
+import { DeleteOutlined } from "@ant-design/icons";
+import { showError } from "@/components/utils/ShowError";
 import { Table, Tag, Button, Space, Popconfirm } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import DeleteButton from "@/components/DeleteButton";
 
 export interface User {
   _id: string;
@@ -18,27 +22,29 @@ export interface User {
   _movements: any[];
 }
 
-export default function LeaguesPage() {
+export default function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const hasRole = useAuthStore((state) => state.hasRole);
-  console.log(useAuthStore.getState());
-  const loadLeagues = async () => {
+
+  const init = async () => {
     try {
       setLoading(true);
-
-      const { data } = await api.get("/users");
-
+      const { data } = await api.get("/users", {
+        params: {
+          $getAllFields: "true",
+        },
+      });
       setData(data.data);
     } catch (error) {
-      console.log(error);
+      showError(error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadLeagues();
+    init();
   }, []);
 
   const columns = [
@@ -73,22 +79,24 @@ export default function LeaguesPage() {
             title: "Acciones",
             render: (_: any, user: User) => (
               <Space>
-                <Button
-                  type="primary"
-                  icon={<EditOutlined />}
-                  onClick={() => editUser(user)}
+                <CrudModal
+                  title="Editar Usuario"
+                  buttonText="Editar"
+                  endpoint="/users"
+                  mode="edit"
+                  id={user._id}
+                  initialValues={user}
+                  onSuccess={init}
                 >
-                  Editar
-                </Button>
+                  <UserForm isEdit />
+                </CrudModal>
 
-                <Popconfirm
-                  title="¿Eliminar usuario?"
-                  onConfirm={() => deleteUser(user._id)}
-                >
-                  <Button danger icon={<DeleteOutlined />}>
-                    Eliminar
-                  </Button>
-                </Popconfirm>
+                <DeleteButton
+                  endpoint="/users"
+                  id={user._id}
+                  title={`¿Eliminar usuario ${user.name}?`}
+                  onSuccess={init}
+                />
               </Space>
             ),
           },
@@ -96,30 +104,25 @@ export default function LeaguesPage() {
       : []),
   ];
 
-  const editUser = (user: User) => {
-    console.log("Editing user:", user);
-    // TODO: Implementar modal/formulario para editar usuario
-  };
-
-  const deleteUser = async (userId: string) => {
-    try {
-      setLoading(true);
-      await api.delete(`/users/${userId}`);
-      loadLeagues();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="p-6">
+    <div className="p-2">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Usuarios</h1>
 
         {hasRole(["master", "admin"]) && (
-          <Button type="primary">Nuevo Usuario</Button>
+          <CrudModal
+            title="Nuevo Usuario"
+            endpoint="/users"
+            buttonText="Nuevo Usuario"
+            mode="create"
+            initialValues={{
+              role: "admin",
+              status: "activo",
+            }}
+            onSuccess={init}
+          >
+            <UserForm />
+          </CrudModal>
         )}
       </div>
 
@@ -128,6 +131,7 @@ export default function LeaguesPage() {
         loading={loading}
         columns={columns}
         dataSource={data}
+        scroll={{ x: 1000 }}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import "./globals.css";
 
-import AuthProvider from "@/components/Layout/AuthProvider";
+import { AuthProvider, Providers } from "@/components/layout/AuthProvider";
 
 export default function RootLayout({
   children,
@@ -10,8 +10,23 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <Providers>{children}</Providers>
+        </AuthProvider>
       </body>
     </html>
   );
 }
+
+// project/
+// ├── app/
+// ├──├──(private)/
+// ├──├──components/
+// ├──├──login/
+// ├──├──services/
+// ├──├──global.css
+// ├──├──layout.tsx
+// ├──├──page.tsx
+// ├── tsconfig.json
+// ├──next.config.ts
+// ├──postcss.config.mjs
