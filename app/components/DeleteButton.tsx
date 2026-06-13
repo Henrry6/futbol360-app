@@ -1,12 +1,10 @@
-// components/ui/DeleteButton.tsx
-
 "use client";
 
 import { useState } from "react";
 import api from "@/services/api";
-import { showError } from "./utils/ShowError";
-import { Button, Popconfirm, message } from "antd";
+import { Button, Popconfirm } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
+import { useShowError, useShowMessage } from "./utils/ShowError";
 
 interface DeleteButtonProps {
   endpoint: string;
@@ -22,18 +20,18 @@ export default function DeleteButton({
   onSuccess,
 }: DeleteButtonProps) {
   const [loading, setLoading] = useState(false);
+  const showError = useShowError();
+  const showMessage = useShowMessage();
 
   const handleDelete = async () => {
     try {
       setLoading(true);
 
       await api.delete(`${endpoint}/${id}`);
-
-      message.success("Registro eliminado correctamente");
-
+      showMessage("Registro eliminado correctamente");
       onSuccess?.();
     } catch (error) {
-      showError(error);
+      await showError(error);
     } finally {
       setLoading(false);
     }
@@ -46,9 +44,7 @@ export default function DeleteButton({
       cancelText="No"
       onConfirm={handleDelete}
     >
-      <Button danger loading={loading} icon={<DeleteOutlined />}>
-        Eliminar
-      </Button>
+      <Button danger loading={loading} icon={<DeleteOutlined />} />
     </Popconfirm>
   );
 }

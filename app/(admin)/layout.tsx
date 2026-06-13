@@ -23,15 +23,21 @@ export default function PrivateLayout({
   const screens = useBreakpoint();
   const [open, setOpen] = useState(false);
   const token = useAuthStore((state) => state.token);
+  const isAdmin = useAuthStore((state) => state.isAdmin);
   const isMobileMd = !screens.lg;
 
   useEffect(() => {
     if (!token) {
       router.replace("/login");
+      return;
     }
-  }, [token, router]);
 
-  if (!token) {
+    if (token && !isAdmin) {
+      router.replace("/");
+    }
+  }, [token, isAdmin, router]);
+
+  if (!token || !isAdmin) {
     return null;
   }
 

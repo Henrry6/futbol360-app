@@ -1,7 +1,7 @@
 "use client";
 
-import { ConfigProvider } from "antd";
 import { useAuthStore } from "@/services/store";
+import { ConfigProvider, App as AntdApp } from "antd";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hydrated = useAuthStore((state) => state.hydrated);
@@ -13,8 +13,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// app/providers.tsx
-
+// Configurar el color de ant - desing
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ConfigProvider
@@ -24,7 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }}
     >
-      {children}
+      <AntdApp>{children}</AntdApp>
     </ConfigProvider>
   );
 }

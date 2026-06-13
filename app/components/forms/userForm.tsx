@@ -1,7 +1,31 @@
+import api from "@/services/api";
 import { $rules } from "@/assets/utils";
 import { Form, Input, Select } from "antd";
+import { useEffect, useState } from "react";
+import { League } from "@/(admin)/leagues/page";
+import { useShowError } from "../utils/ShowError";
 
 export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
+  const [loading, setLoading] = useState(false);
+  const ShowError = useShowError();
+
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const loadLeagues = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get("/leagues");
+      setLeagues(data.data);
+    } catch (error) {
+      ShowError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLeagues();
+  }, []);
+
   return (
     <>
       <Form.Item name="name" label="Nombre" rules={[$rules.required()]}>
@@ -51,7 +75,15 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
       </Form.Item>
 
       <Form.Item name="leagues" label="Ligas">
-        <Select mode="multiple" placeholder="Seleccione ligas" />
+        <Select
+          mode="multiple"
+          loading={loading}
+          placeholder="Seleccione ligas"
+          options={leagues.map((league) => ({
+            value: league._id,
+            label: league.name,
+          }))}
+        />
       </Form.Item>
     </>
   );

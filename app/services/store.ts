@@ -15,9 +15,13 @@ interface AuthStore {
 
   user: User | null;
 
+  loginType: "admin" | "user" | null;
+
+  isAdmin: boolean;
+
   setHydrated: (value: boolean) => void;
 
-  setAuth: (token: string, user: User) => void;
+  setAuth: (token: string, user: User, loginType: "admin" | "user") => void;
 
   logout: () => void;
 
@@ -28,26 +32,30 @@ export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       hydrated: false,
-
       token: null,
-
       user: null,
+      loginType: null,
+      isAdmin: false,
 
       setHydrated: (value) =>
         set({
           hydrated: value,
         }),
 
-      setAuth: (token, user) =>
+      setAuth: (token, user, loginType) =>
         set({
           token,
           user,
+          loginType,
+          isAdmin: user.role === "master",
         }),
 
       logout: () =>
         set({
           token: null,
           user: null,
+          loginType: null,
+          isAdmin: false,
         }),
 
       hasRole: (roles) => {

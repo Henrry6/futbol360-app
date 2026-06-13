@@ -3,11 +3,12 @@
 import { Button, Card, Form, Input } from "antd";
 import { login } from "@/services/auth";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "../services/store";
-import { showError } from "../components/utils/ShowError";
+import { useAuthStore } from "@/services/store";
+import { useShowError } from "@/components/utils/ShowError";
 
 export default function LoginPage() {
   const router = useRouter();
+  const showError = useShowError();
 
   async function onFinish(values: {
     username: string;
@@ -20,15 +21,10 @@ export default function LoginPage() {
         values.password,
         values.code,
       );
-      localStorage.setItem("token", response.token);
-      useAuthStore.getState().setAuth(response.token, response.user);
-      if (response.user.role) {
-        router.push("/users");
-      } else {
-        router.push("/dashboard/leagues");
-      }
+      useAuthStore.getState().setAuth(response.token, response.user, "user");
+      router.push("/dashboard/leagues");
     } catch (e) {
-      showError(e);
+      await showError(e);
     }
   }
 

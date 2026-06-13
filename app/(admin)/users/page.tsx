@@ -1,14 +1,13 @@
 "use client";
 
 import api from "@/services/api";
+import { Table, Tag, Space } from "antd";
 import { useEffect, useState } from "react";
 import CrudModal from "@/components/CrudModal";
 import { useAuthStore } from "@/services/store";
 import UserForm from "@/components/forms/userForm";
-import { DeleteOutlined } from "@ant-design/icons";
-import { showError } from "@/components/utils/ShowError";
-import { Table, Tag, Button, Space, Popconfirm } from "antd";
 import DeleteButton from "@/components/DeleteButton";
+import { useShowError } from "@/components/utils/ShowError";
 
 export interface User {
   _id: string;
@@ -26,6 +25,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const hasRole = useAuthStore((state) => state.hasRole);
+  const showError = useShowError();
 
   const init = async () => {
     try {
@@ -37,7 +37,7 @@ export default function UsersPage() {
       });
       setData(data.data);
     } catch (error) {
-      showError(error);
+      await showError(error);
     } finally {
       setLoading(false);
     }
