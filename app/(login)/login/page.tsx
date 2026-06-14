@@ -22,7 +22,7 @@ export default function LoginPage() {
         values.code,
       );
       useAuthStore.getState().setAuth(response.token, response.user, "user");
-      router.push("/dashboard/leagues");
+      router.push("/dashboard");
     } catch (e) {
       await showError(e);
     }
@@ -36,7 +36,7 @@ export default function LoginPage() {
       <div className="mb-8 text-center">
         <div className="mb-3 text-5xl">⚽</div>
 
-        <h1 className="text-3xl font-bold text-white">Futbol App</h1>
+        <h1 className="text-3xl font-bold text-white">Futbol 360</h1>
 
         <p className="mt-2 text-sm text-gray-400">
           Gestión profesional de ligas y equipos

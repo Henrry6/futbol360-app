@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
       <div className="mb-8 text-center">
         <div className="mb-3 text-5xl">⚽</div>
 
-        <h1 className="text-3xl font-bold text-white">ADMIN - Futbol App</h1>
+        <h1 className="text-3xl font-bold text-white">ADMIN - Futbol 360</h1>
 
         <p className="mt-2 text-sm text-gray-400">
           Gestión profesional de ligas y equipos

@@ -4,27 +4,21 @@ import { persist } from "zustand/middleware";
 export interface User {
   _id: string;
   name: string;
-  username: string;
   role: "master" | "admin" | "directivo" | "player";
+  league: string;
+  nameLiga: string;
+  code: string;
 }
 
 interface AuthStore {
   hydrated: boolean;
-
   token: string | null;
-
   user: User | null;
-
   loginType: "admin" | "user" | null;
-
   isAdmin: boolean;
-
   setHydrated: (value: boolean) => void;
-
   setAuth: (token: string, user: User, loginType: "admin" | "user") => void;
-
   logout: () => void;
-
   hasRole: (roles: User["role"][]) => boolean;
 }
 

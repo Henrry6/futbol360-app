@@ -1,20 +1,18 @@
 "use client";
 
 import { Drawer, Grid, Layout } from "antd";
-
+import { adminMenu } from "@/assets/menus";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
+import { MenuOutlined } from "@ant-design/icons";
+import { useAuthStore } from "@/services/store";
 import AppHeader from "@/components/layout/AppHeader";
 import AppSidebar from "@/components/layout/AppSidebar";
-
-import { useAuthStore } from "@/services/store";
-import { MenuOutlined } from "@ant-design/icons";
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
 
-export default function PrivateLayout({
+export default function LayoutAdmin({
   children,
 }: {
   children: React.ReactNode;
@@ -52,7 +50,7 @@ export default function PrivateLayout({
             borderRight: "1px solid #E5E7EB",
           }}
         >
-          <AppSidebar />
+          <AppSidebar subtitle="ADMIN" items={adminMenu} />
         </Sider>
       )}
 
@@ -74,7 +72,7 @@ export default function PrivateLayout({
                     className="text-xl cursor-pointer hidden sm:block"
                   />
                   <h1 className="font-bold text-lg whitespace-nowrap">
-                    ⚽ Futbol360
+                    ⚽ Futbol360 - ADMIN
                   </h1>
                 </>
               )}
@@ -91,7 +89,7 @@ export default function PrivateLayout({
         title={
           <>
             <h1 className="font-bold text-xl whitespace-nowrap">
-              ⚽ Futbol360
+              ⚽ Futbol360 - ADMIN
             </h1>
           </>
         }
@@ -102,7 +100,7 @@ export default function PrivateLayout({
           background: "#DCFCE7",
         }}
       >
-        <AppSidebar hiddeTitle />
+        <AppSidebar subtitle="ADMIN" items={adminMenu} showHeader={false} />
       </Drawer>
     </Layout>
   );

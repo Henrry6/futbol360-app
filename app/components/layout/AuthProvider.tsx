@@ -21,6 +21,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         token: {
           colorPrimary: "#51ad73",
         },
+        components: {
+          Layout: {
+            headerBg: "#ffffff",
+            headerColor: "#000000",
+          },
+        },
       }}
     >
       <AntdApp>{children}</AntdApp>
