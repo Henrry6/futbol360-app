@@ -1,6 +1,6 @@
 "use client";
 
-import InsertTeam from "../../insert/page";
-export default function EditTeam() {
-  return InsertTeam();
+import InsertPlayer from "../../insert/page";
+export default function EditPlayer() {
+  return InsertPlayer();
 }

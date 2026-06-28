@@ -1,15 +1,15 @@
 "use client";
 
 import dayjs from "dayjs";
+import { Player } from "../page";
 import { Button, Card, Form, Spin } from "antd";
 import PageHeader from "@/components/PageHeader";
-import TeamForm from "@/components/forms/teamForm";
 import { useVisataInsert } from "@/assets/vistaInsert";
-import { Team } from "../page";
+import PlayerForm from "@/components/forms/playerForm";
 
 export default function InsertTeam() {
-  const insert = useVisataInsert<Team>({
-    endpoint: "/teams",
+  const insert = useVisataInsert<Player>({
+    endpoint: "/players",
     params: {
       $getAllFields: "true",
     },
@@ -17,17 +17,16 @@ export default function InsertTeam() {
       status: "activo",
     },
     formatearDataInicial: (data) => {
-      console.log(data, "INI");
-      data.fundacion = dayjs(data.fundacion);
+      data.birthDate = dayjs(data.birthDate);
     },
   });
   return (
     <div className="p-6">
       <PageHeader
         resource={{
-          label: "Equipos",
-          href: "/teams",
-          singular: "equipo",
+          label: "Jugadores",
+          href: "/players",
+          singular: "jugador",
         }}
         hideSearch
         hideRefresh
@@ -40,7 +39,7 @@ export default function InsertTeam() {
             initialValues={insert.datos}
             onFinish={insert.onSubmit}
           >
-            <TeamForm />
+            <PlayerForm />
             <div>
               <Button type="primary" htmlType="submit">
                 Guardar

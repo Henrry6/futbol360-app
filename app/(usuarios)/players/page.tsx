@@ -1,63 +1,58 @@
 "use client";
 
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import $filtros from "@/assets/utils";
 import { Movement } from "@/types/global";
-import EmptyState from "@/components/Empty";
 import PageHeader from "@/components/PageHeader";
-import { EditOutlined, TeamOutlined } from "@ant-design/icons";
 import TagButtons from "@/components/TagButtons";
 import { useVistaIndex } from "@/assets/vistaIndex";
 import DeleteButton from "@/components/DeleteButton";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Avatar,
-  Button,
-  Descriptions,
-  Divider,
-  Space,
-  Spin,
-  Table,
-} from "antd";
+import { EditOutlined, UserOutlined } from "@ant-design/icons";
+import { Avatar, Button, Descriptions, Space, Spin, Table } from "antd";
 
-export interface Team {
+export interface Player {
   _id: string;
+  team: { name: string };
   league: string;
-  name: string;
-  representative: string;
-  fundacion: Date | Dayjs;
-  logo?: string;
-  phone?: string;
-  directorio?: {
-    presidente: string;
-    vicepresidente: string;
-    secretarios: string;
-    tesorero: string;
-  };
+  cedula: string;
+  names: string;
+  lastName: string;
+  birthDate: Date | Dayjs;
+  jerseyNumber: number;
+  photo?: string;
+  position?:
+    | "portero"
+    | "defensa"
+    | "lateral_derecho"
+    | "lateral_izquierdo"
+    | "volante"
+    | "mediocampista"
+    | "extremo_derecho"
+    | "extremo_izquierdo"
+    | "delantero";
   status: "activo" | "inactivo";
   _movements: Movement[];
 }
 
-export default function EquiposPage() {
+export default function PlayersPage() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { data, loading, refresh, setSearch, tableProps } = useVistaIndex<Team>(
-    {
-      endpoint: "/teams",
-      params: {
-        $getAllFields: "true",
-      },
+  const { loading, refresh, setSearch, tableProps } = useVistaIndex<Player>({
+    endpoint: "/players",
+    params: {
+      $getAllFields: "true",
     },
-  );
+  });
 
   return (
     <Spin spinning={loading}>
       <div className="p-6">
         <PageHeader
           resource={{
-            label: "Equipos",
-            href: "/teams",
+            label: "Jugadores",
+            href: "/players",
           }}
           loading={loading}
           onSearch={setSearch}
@@ -65,108 +60,102 @@ export default function EquiposPage() {
         />
         <Table
           {...tableProps}
+          rowKey={(record) => record._id}
           expandable={{
             expandedRowRender: (record) => (
               <div className="grid md:grid-cols-3 gap-8">
                 <div className="flex justify-center">
-                  {record.logo ? (
-                    <>
-                      logoo
-                      {/* // <Image
-                    //   src={record.logo}
+                  {record.photo ? (
+                    // <Image
+                    //   src={record.photo}
                     //   width={180}
                     //   preview
                     //   className="rounded-lg"
-                    // /> */}
-                    </>
+                    // />
+                    <>Foto</>
                   ) : (
-                    <Avatar size={180} icon={<TeamOutlined />} />
+                    <Avatar size={180} icon={<UserOutlined />} />
                   )}
                 </div>
 
                 <div className="md:col-span-2">
                   <Descriptions
-                    title="Información general"
+                    title="Información del jugador"
                     column={2}
                     size="small"
                   >
                     <Descriptions.Item label="Equipo">
-                      {record.name}
+                      {record.team?.name || "-"}
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="Representante">
-                      {record.representative}
+                    <Descriptions.Item label="Cédula">
+                      {record.cedula}
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="Fundación">
-                      {$filtros.date(record.fundacion) || "-"}
+                    <Descriptions.Item label="Nombres">
+                      {record.names}
                     </Descriptions.Item>
 
-                    <Descriptions.Item label="Teléfono">
-                      {record.phone || "-"}
+                    <Descriptions.Item label="Apellidos">
+                      {record.lastName}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Nacimiento">
+                      {$filtros.date(record.birthDate)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Edad">
+                      {dayjs().diff(record.birthDate, "year")} años
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Posición">
+                      {record.position || "-"}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Número">
+                      {record.jerseyNumber || "-"}
                     </Descriptions.Item>
 
                     <Descriptions.Item label="Estado">
                       <TagButtons status={record.status} />
                     </Descriptions.Item>
                   </Descriptions>
-
-                  <Divider />
-
-                  <Descriptions title="Directorio" column={2} size="small">
-                    <Descriptions.Item label="Presidente">
-                      {record.directorio?.presidente || "-"}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="Vicepresidente">
-                      {record.directorio?.vicepresidente || "-"}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="Secretario">
-                      {record.directorio?.secretarios || "-"}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="Tesorero">
-                      {record.directorio?.tesorero || "-"}
-                    </Descriptions.Item>
-                  </Descriptions>
                 </div>
               </div>
             ),
           }}
-          rowKey={(record) => record._id}
           columns={[
             {
-              title: "Logo",
-              dataIndex: "logo",
+              title: "Foto",
+              dataIndex: "photo",
               width: 70,
               align: "center",
-              render: (logo) =>
-                logo ? (
-                  <Avatar src={logo} size={40} />
+              render: (photo) =>
+                photo ? (
+                  <Avatar src={photo} size={40} />
                 ) : (
                   <Avatar size={40}>
-                    <TeamOutlined />
+                    <UserOutlined />
                   </Avatar>
                 ),
             },
             {
+              title: "Jugador",
+              render: (_, record) => `${record.names} ${record.lastName}`,
+            },
+            {
               title: "Equipo",
-              dataIndex: "name",
+              render: (_, record) => record.team?.name,
             },
             {
-              title: "Representante",
-              dataIndex: "representative",
-            },
-            {
-              title: "Fundación",
-              dataIndex: "fundacion",
+              title: "#",
+              dataIndex: "jerseyNumber",
               align: "center",
-              render: (value) => $filtros.date(value) || "-",
+              width: 80,
             },
             {
-              title: "Teléfono",
-              dataIndex: "phone",
+              title: "Posición",
+              dataIndex: "position",
               align: "center",
               render: (value) => value || "-",
             },
@@ -189,9 +178,9 @@ export default function EquiposPage() {
                   />
 
                   <DeleteButton
-                    endpoint="/teams"
+                    endpoint="/players"
                     id={record._id}
-                    title={`¿Eliminar el equipo ${record.name}?`}
+                    title={`¿Eliminar el jugador ${record.names} ${record.lastName}?`}
                     onSuccess={refresh}
                   />
                 </Space>
@@ -199,16 +188,6 @@ export default function EquiposPage() {
             },
           ]}
         />
-        {data.length === 0 && !loading && (
-          <EmptyState
-            title="No existen equipos"
-            description="Crea el primer equipo para comenzar a registrar partidos y posiciones."
-            buttonText="Crear equipo"
-            onCreate={() => router.push("/teams/insert")}
-            onRefresh={refresh}
-            icon="👥"
-          />
-        )}{" "}
       </div>
     </Spin>
   );

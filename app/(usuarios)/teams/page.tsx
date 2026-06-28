@@ -42,14 +42,12 @@ export default function EquiposPage() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { data, loading, refresh, setSearch, tableProps } = useVistaIndex<Team>(
-    {
-      endpoint: "/teams",
-      params: {
-        $getAllFields: "true",
-      },
+  const { loading, refresh, setSearch, tableProps } = useVistaIndex<Team>({
+    endpoint: "/teams",
+    params: {
+      $getAllFields: "true",
     },
-  );
+  });
 
   return (
     <Spin spinning={loading}>
@@ -199,16 +197,6 @@ export default function EquiposPage() {
             },
           ]}
         />
-        {data.length === 0 && !loading && (
-          <EmptyState
-            title="No existen equipos"
-            description="Crea el primer equipo para comenzar a registrar partidos y posiciones."
-            buttonText="Crear equipo"
-            onCreate={() => router.push("/teams/insert")}
-            onRefresh={refresh}
-            icon="👥"
-          />
-        )}{" "}
       </div>
     </Spin>
   );
