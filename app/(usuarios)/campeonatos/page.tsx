@@ -5,6 +5,7 @@ import api from "@/services/api";
 import { Movement } from "@/types/global";
 import { useEffect, useState } from "react";
 import { useShowError } from "@/components/utils/ShowError";
+import PageHeader from "@/components/PageHeader";
 
 export interface Championship {
   _id: string;
@@ -18,9 +19,9 @@ export interface Championship {
 }
 
 export default function CampeonatosPage() {
+  const ShowError = useShowError();
   const [loading, setLoading] = useState(false);
   const [leagues, setLeagues] = useState([]);
-  const ShowError = useShowError();
 
   const loadCampeonatos = async () => {
     try {
@@ -41,8 +42,16 @@ export default function CampeonatosPage() {
   return (
     <Spin spinning={loading}>
       <div className="p-6">
-        <h1 className="text-3xl font-bold mb-6">Campeonatos</h1>
-
+        <PageHeader
+          breadcrumbs={[
+            {
+              label: "Campeonatos",
+            },
+          ]}
+          loading={loading}
+          insertHref="/campeonatos/insert"
+          onRefresh={loadCampeonatos}
+        />
         <div className="grid md:grid-cols-3 gap-4">
           {leagues.map((league: any) => (
             <Card key={league._id} hoverable className="rounded-2xl">

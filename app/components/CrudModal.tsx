@@ -69,7 +69,7 @@ export default function CrudModal({
         </Button>
       ) : (
         <Button type="primary" onClick={() => setOpen(true)}>
-          {buttonText}
+          {buttonText || "Crear"}
         </Button>
       )}
 

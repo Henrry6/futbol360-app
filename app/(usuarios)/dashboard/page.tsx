@@ -3,18 +3,17 @@
 import api from "@/services/api";
 import { Col, Row, Spin } from "antd";
 import { useRouter } from "next/navigation";
-
 import { useEffect, useState } from "react";
 import { useShowError } from "@/components/utils/ShowError";
 import {
   TrophyOutlined,
   TeamOutlined,
-  UserOutlined,
   UsergroupAddOutlined,
   AppstoreOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 
-export default function LeaguesPage() {
+export default function DashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<any>();
   const [loading, setLoading] = useState(false);
@@ -41,7 +40,7 @@ export default function LeaguesPage() {
       title: "Campeonatos",
       value: data?.campeonatos ?? 0,
       icon: <TrophyOutlined />,
-      route: "/championships",
+      route: "/campeonatos",
       color: "from-amber-400 to-orange-500",
     },
     {
@@ -59,10 +58,10 @@ export default function LeaguesPage() {
       color: "from-green-400 to-green-600",
     },
     {
-      title: "Jugadores",
+      title: "Partidos",
       value: data?.jugadores ?? 0,
-      icon: <UserOutlined />,
-      route: "/players",
+      icon: <CalendarOutlined />,
+      route: "/matches",
       color: "from-violet-400 to-purple-600",
     },
     {

@@ -27,29 +27,29 @@ export const leagueMenu = (leagueId: string) => [
   {
     key: "championship",
     icon: <TrophyOutlined />,
-    label: "Campeonato",
+    label: "Liga",
     children: [
       {
         key: `/campeonatos`,
         label: "Campeonatos",
       },
       {
-        key: `/leagues/${leagueId}/categories`,
+        key: `/categories`,
         label: "Categorías",
       },
       {
-        key: `/leagues/${leagueId}/fixtures`,
+        key: `/fixtures`,
         label: "Calendario",
       },
     ],
   },
   {
-    key: `/leagues/${leagueId}/teams`,
+    key: `/teams`,
     icon: <TeamOutlined />,
     label: "Equipos",
   },
   {
-    key: `/leagues/${leagueId}/matches`,
+    key: `/matches`,
     icon: <CalendarOutlined />,
     label: "Partidos",
   },

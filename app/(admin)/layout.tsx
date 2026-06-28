@@ -60,7 +60,7 @@ export default function LayoutAdmin({
           style={{
             height: 64,
             lineHeight: "64px",
-            backgroundColor: "#DCFCE7",
+            backgroundColor: "#D4D4FF",
           }}
         >
           <div className="flex items-center justify-between h-full w-full">

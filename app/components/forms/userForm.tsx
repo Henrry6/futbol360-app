@@ -9,7 +9,7 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
   const [loading, setLoading] = useState(false);
   const ShowError = useShowError();
 
-  const [leagues, setLeagues] = useState<League[]>([]);
+  const [selectLeagues, setLeagues] = useState<League[]>([]);
   const loadLeagues = async () => {
     try {
       setLoading(true);
@@ -79,7 +79,7 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
           mode="multiple"
           loading={loading}
           placeholder="Seleccione ligas"
-          options={leagues.map((league) => ({
+          options={selectLeagues.map((league) => ({
             value: league._id,
             label: league.name,
           }))}
