@@ -17,7 +17,18 @@ interface StatusItem {
 export const dataStatus: StatusItem[] = [
   { id: "activo", description: "Activo", color: "green" },
   { id: "inactivo", description: "Inactivo", color: "red" },
+  { id: "planificado", description: "Planificado", color: "blue" },
+  { id: "finalizado", description: "Finalizado", color: "gold" },
+  //Campeonatos
+  { id: "temporada", description: "Temporada", color: "orange" },
+  { id: "apertura", description: "Apertura", color: "green" },
+  { id: "clausura", description: "Clausura", color: "purple" },
+  { id: "copa", description: "Copa", color: "magenta" },
+  { id: "amistoso", description: "Amistoso", color: "cyan" },
+  // Delete
   { id: "anulado", description: "Anulado", color: "red" },
+  { id: "cancelado", description: "Cancelado", color: "red" },
+
   { id: "created", description: "Creado", color: "blue" },
   { id: "borrador", description: "Borrador", color: "orange" },
   { id: "aprobado", description: "Aprobado", color: "green" },

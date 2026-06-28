@@ -2,8 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
 import { Breadcrumb, Button, Input, Space, Typography } from "antd";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   ReloadOutlined,
   SearchOutlined,
@@ -15,15 +15,16 @@ const { Title } = Typography;
 
 export interface BreadcrumbItem {
   label: string;
-  href?: string;
+  href: string;
+  singular?: string;
 }
 
 export interface PageHeaderProps {
-  breadcrumbs: BreadcrumbItem[];
+  entityName?: string;
+  resource: BreadcrumbItem;
   loading?: boolean;
   hideSearch?: boolean;
   hideRefresh?: boolean;
-  insertHref?: string;
   insertLabel?: string;
   onRefresh?: () => void;
   onSearch?: (e: string) => void;
@@ -32,27 +33,45 @@ export interface PageHeaderProps {
 }
 
 export default function PageHeader({
-  breadcrumbs,
   loading = false,
   hideSearch = false,
   hideRefresh = false,
-  insertHref,
   insertLabel = "Crear",
   onRefresh,
   onSearch,
   onClear,
   extra,
+  resource,
 }: PageHeaderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const search = searchParams.get("q") ?? "";
-  const title = breadcrumbs[breadcrumbs.length - 1]?.label ?? "";
+  const { id } = useParams();
 
+  const subtitle = resource.singular
+    ? id
+      ? `Editar ${resource.singular}`
+      : `Crear ${resource.singular}`
+    : undefined;
+
+  const breadcrumbsList = [
+    {
+      label: resource.label,
+      href: resource.href,
+    },
+    ...(subtitle
+      ? [
+          {
+            label: subtitle,
+          },
+        ]
+      : []),
+  ];
   return (
     <div className="mb-6">
       <Breadcrumb
         className="mb-2"
-        items={breadcrumbs.map((item) => ({
+        items={breadcrumbsList.map((item) => ({
           title: item.href ? (
             <Link href={item.href}>{item.label}</Link>
           ) : (
@@ -68,7 +87,7 @@ export default function PageHeader({
             margin: 0,
           }}
         >
-          {title}
+          {resource.label}
         </Title>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -99,11 +118,11 @@ export default function PageHeader({
               />
             )}
 
-            {!extra && insertHref && (
+            {!extra && !subtitle && (
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
-                onClick={() => router.push(insertHref)}
+                onClick={() => router.push(`${resource.href}/insert`)}
               >
                 {insertLabel}
               </Button>

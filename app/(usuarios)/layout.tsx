@@ -35,7 +35,7 @@ export default function LayoutUsuarios({
     return null;
   }
 
-  const menu = menus.directivo(user?.league as string);
+  const menu = menus.directivo();
 
   return (
     <Layout style={{ minHeight: "100vh" }}>

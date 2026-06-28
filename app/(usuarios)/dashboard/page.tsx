@@ -45,7 +45,7 @@ export default function DashboardPage() {
     },
     {
       title: "Categorías",
-      value: data?.cateogrias ?? 0,
+      value: data?.categorias ?? 0,
       icon: <AppstoreOutlined />,
       route: "/categories",
       color: "from-blue-400 to-blue-600",

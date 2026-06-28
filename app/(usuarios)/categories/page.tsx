@@ -29,11 +29,10 @@ export default function CategoriesPage() {
     <Spin spinning={loading}>
       <div className="p-6">
         <PageHeader
-          breadcrumbs={[
-            {
-              label: "Categorías",
-            },
-          ]}
+          resource={{
+            label: "Categorías",
+            href: "/categories",
+          }}
           loading={loading}
           onSearch={setSearch}
           onRefresh={refresh}

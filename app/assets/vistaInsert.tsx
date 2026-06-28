@@ -1,75 +1,84 @@
 import { Form } from "antd";
 import api from "@/services/api";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useShowError } from "@/components/utils/ShowError";
 import { useShowMessage } from "@/components/utils/ShowError";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface CrudFormProps<T> {
   endpoint: string;
-  defaults?: Partial<T>;
+  datos?: Partial<T>;
   onSuccess?: (data: T) => void;
+  params?: Record<string, any>;
+  formatearDataInicial?: (data: T) => Promise<void> | void;
 }
 
 export function useVisataInsert<T>({
   endpoint,
-  defaults,
+  datos,
   onSuccess,
+  params,
+  formatearDataInicial,
 }: CrudFormProps<T>) {
   const { id } = useParams();
   const [form] = Form.useForm();
   const showError = useShowError();
   const showMessage = useShowMessage();
   const [loading, setLoading] = useState(false);
-  const [initialValues, setInitialValues] = useState<Partial<T> | undefined>();
 
-  const load = useCallback(async () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const listPath = `/${pathname.split("/").filter(Boolean)[0]}`;
+
+  const load = async () => {
     if (!id) return;
-
     try {
       setLoading(true);
-      const { data } = await api.get(`${endpoint}/${id}`);
-      setInitialValues(data);
+      const { data } = await api.get(`${endpoint}/${id}`, {
+        params,
+      });
+      await formatearDataInicial?.(data);
       form.setFieldsValue(data);
+      return data || datos;
     } catch (error) {
       await showError(error);
     } finally {
       setLoading(false);
     }
-  }, [endpoint, form, id, showError]);
+  };
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [id]);
 
-  const onSubmit = useCallback(async () => {
-    try {
-      console.log("aaaaa");
-      const values = await form.validateFields();
-      let response;
-      if (!id) {
-        response = await api.post(endpoint, values);
-        showMessage("Registro creado correctamente");
-      } else {
-        response = await api.put(`${endpoint}/${id}`, values);
-        showMessage("Registro actualizado correctamente");
+  const onSubmit = useCallback(
+    async (values: any) => {
+      try {
+        let response;
+        if (!id) {
+          response = await api.post(endpoint, values);
+          showMessage("Registro creado correctamente");
+        } else {
+          response = await api.put(`${endpoint}/${id}`, values);
+          showMessage("Registro actualizado correctamente");
+        }
+        onSuccess?.(response.data);
+        router.push(listPath);
+      } catch (error) {
+        await showError(error);
       }
-
-      onSuccess?.(response.data);
-
-      return response.data;
-    } catch (error) {
-      await showError(error);
-      throw error;
-    }
-  }, [endpoint, form, id, onSuccess, showError, showMessage]);
+    },
+    [endpoint, form, id, onSuccess],
+  );
 
   return {
     id,
     form,
     loading,
     onSubmit,
-    initialValues: initialValues ?? defaults,
+    formatearDataInicial,
+    datos,
     refresh: load,
   };
 }

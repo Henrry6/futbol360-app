@@ -2,8 +2,9 @@ import {
   TrophyOutlined,
   TeamOutlined,
   UserOutlined,
-  CalendarOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
+import { GiSoccerBall } from "react-icons/gi";
 
 export const adminMenu = [
   {
@@ -23,40 +24,87 @@ export const adminMenu = [
   },
 ];
 
-export const leagueMenu = (leagueId: string) => [
+export const leagueMenu = () => [
   {
-    key: "championship",
+    key: "/dashboard",
+    label: "Inicio",
+  },
+  {
+    key: "league",
     icon: <TrophyOutlined />,
     label: "Liga",
     children: [
       {
-        key: `/campeonatos`,
+        key: "/campeonatos",
         label: "Campeonatos",
       },
       {
-        key: `/categories`,
+        key: "/categories",
         label: "Categorías",
       },
       {
-        key: `/fixtures`,
+        key: "/fixtures",
         label: "Calendario",
       },
     ],
   },
   {
-    key: `/teams`,
+    key: "participants",
     icon: <TeamOutlined />,
-    label: "Equipos",
+    label: "Participantes",
+    children: [
+      {
+        key: "/teams",
+        label: "Equipos",
+      },
+      {
+        key: "/players",
+        label: "Jugadores",
+      },
+    ],
   },
   {
-    key: `/matches`,
-    icon: <CalendarOutlined />,
-    label: "Partidos",
+    key: "competition",
+    icon: <GiSoccerBall size={18} />,
+    label: "Competición",
+    children: [
+      {
+        key: "/matches",
+        label: "Partidos",
+      },
+      {
+        key: "/standings",
+        label: "Tabla de posiciones",
+      },
+      {
+        key: "/scorers",
+        label: "Goleadores",
+      },
+      {
+        key: "/sanctions",
+        label: "Sanciones",
+      },
+    ],
+  },
+  {
+    key: "reports",
+    icon: <BarChartOutlined />,
+    label: "Reportes",
+    children: [
+      {
+        key: "/statistics",
+        label: "Estadísticas",
+      },
+      {
+        key: "/history",
+        label: "Historial",
+      },
+    ],
   },
 ];
 
 export const menus = {
   admin: adminMenu,
 
-  directivo: (leagueId: string) => leagueMenu(leagueId),
+  directivo: () => leagueMenu(),
 };

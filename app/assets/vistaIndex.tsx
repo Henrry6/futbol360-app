@@ -32,6 +32,8 @@ export function useVistaIndex<T>({
   const limit = Number(searchParams.get("limit") ?? 20);
   const sort = searchParams.get("sort") ?? "";
 
+  const query = searchParams.toString();
+
   const refresh = useCallback(async () => {
     if (loadingRef.current) return;
     try {
@@ -57,7 +59,7 @@ export function useVistaIndex<T>({
 
       setLoading(false);
     }
-  }, [q, page, limit, sort, endpoint, params]);
+  }, [query]);
 
   useEffect(() => {
     if (!autoLoad) return;

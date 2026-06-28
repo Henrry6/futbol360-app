@@ -1,46 +1,53 @@
 "use client";
 
+import dayjs from "dayjs";
+import { Championship } from "../page";
+import { Button, Form, Spin } from "antd";
+import PageHeader from "@/components/PageHeader";
 import { useVisataInsert } from "@/assets/vistaInsert";
 import ChampionsForm from "@/components/forms/championsForm";
-import PageHeader from "@/components/PageHeader";
-import { Button, Form } from "antd";
 
 export default function InsertChampions() {
-  const insert = useVisataInsert({
-    endpoint: "/championship",
-    defaults: {
+  const insert = useVisataInsert<Championship>({
+    endpoint: "/championships",
+    params: {
+      $getAllFields: "true",
+    },
+    datos: {
       status: "activo",
+    },
+    formatearDataInicial: (data) => {
+      data.season = dayjs(data.season);
+      data.startDate = dayjs(data.startDate);
+      data.endDate = dayjs(data.endDate);
     },
   });
   return (
     <div className="p-6">
       <PageHeader
-        breadcrumbs={[
-          {
-            label: "Campeonatos",
-            href: "/campeonatos",
-          },
-          {
-            label: "Crear campeonato",
-          },
-        ]}
+        resource={{
+          label: "Campeonatos",
+          href: "/campeonatos",
+          singular: "campeonato",
+        }}
         hideSearch
         hideRefresh
       />
-
-      <Form
-        form={insert.form}
-        layout="vertical"
-        initialValues={insert.initialValues}
-        onFinish={insert.onSubmit}
-      >
-        <ChampionsForm />
-      </Form>
-      <div>
-        <Button type="primary" htmlType="submit">
-          Guardar
-        </Button>
-      </div>
+      <Spin spinning={insert.loading}>
+        <Form
+          form={insert.form}
+          layout="vertical"
+          initialValues={insert.datos}
+          onFinish={insert.onSubmit}
+        >
+          <ChampionsForm />
+          <div>
+            <Button type="primary" htmlType="submit">
+              Guardar
+            </Button>
+          </div>
+        </Form>
+      </Spin>
     </div>
   );
 }

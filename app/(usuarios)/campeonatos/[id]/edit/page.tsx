@@ -1,25 +1,6 @@
 "use client";
 
-import PageHeader from "@/components/PageHeader";
-import ChampionsForm from "@/components/forms/championsForm";
-
+import InsertChampions from "../../insert/page";
 export default function EditChampionship() {
-  return (
-    <div className="p-6">
-      <PageHeader
-        breadcrumbs={[
-          {
-            label: "Campeonatos",
-            href: "/campeonatos",
-          },
-          {
-            label: "Editar categoría",
-          },
-        ]}
-        hideSearch
-        hideRefresh
-      />
-      <ChampionsForm />
-    </div>
-  );
+  return InsertChampions();
 }
