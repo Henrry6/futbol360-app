@@ -11,6 +11,7 @@ import {
   UsergroupAddOutlined,
   AppstoreOutlined,
   CalendarOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 
 export default function DashboardPage() {
@@ -63,6 +64,13 @@ export default function DashboardPage() {
       icon: <CalendarOutlined />,
       route: "/matches",
       color: "from-violet-400 to-purple-600",
+    },
+    {
+      title: "Jugadores",
+      value: data?.jugadores ?? 0,
+      icon: <UserOutlined />,
+      route: "/players",
+      color: "bg-gradient-to-br from-red-500 to-indigo-600",
     },
     {
       title: "Usuarios",

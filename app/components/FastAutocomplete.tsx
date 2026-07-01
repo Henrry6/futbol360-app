@@ -2,28 +2,19 @@ import api from "@/services/api";
 import { Form, Select } from "antd";
 import type { SelectProps } from "antd";
 import { $rules } from "@/assets/utils";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-interface AutoCompleteFastProps {
-  name: string | (string | number)[];
-  endpoint: string;
-  params?: Record<string, any>;
-  label?: string;
-  placeholder?: string;
-  required?: boolean;
-  disabled?: boolean;
-  valueField?: string;
-  optionLabel?: (item: any) => React.ReactNode;
-  onSelect?: (item: any) => void;
-}
+type SelectValue = string | number | (string | number)[];
 
 interface RemoteSelectProps {
-  value?: string;
-  onChange?: (value?: string) => void;
+  value?: SelectValue;
+  onChange?: (value?: SelectValue) => void;
   endpoint: string;
   params?: Record<string, any>;
   placeholder?: string;
   disabled?: boolean;
+  isMultiple?: boolean;
+  triggerOnMount?: boolean;
   valueField: string;
   optionLabel: (item: any) => React.ReactNode;
   onSelect?: (item: any) => any;
@@ -32,12 +23,13 @@ interface RemoteSelectProps {
 const RemoteSelect = ({
   value,
   onChange,
-
   endpoint,
   params,
   placeholder,
   disabled,
   valueField,
+  isMultiple,
+  triggerOnMount,
   optionLabel,
   onSelect,
 }: RemoteSelectProps) => {
@@ -86,6 +78,24 @@ const RemoteSelect = ({
     }
   }, [value]);
 
+  const optionMap = useMemo(() => {
+    return new Map(options?.map((o: any) => [o.value, o.item]) ?? []);
+  }, [options]);
+
+  useEffect(() => {
+    console.log("triggerOnMount", value, optionMap, triggerOnMount);
+    if (!triggerOnMount || value == null) return;
+
+    if (isMultiple) {
+      onSelect?.((value as any[]).map((v) => optionMap.get(v)).filter(Boolean));
+    } else {
+      const item = optionMap.get(value);
+      if (item) {
+        onSelect?.(item);
+      }
+    }
+  }, [triggerOnMount, value, optionMap]);
+
   return (
     <Select
       value={value}
@@ -98,24 +108,38 @@ const RemoteSelect = ({
         filterOption: false,
         onSearch: search,
       }}
+      mode={isMultiple ? "multiple" : undefined}
       onFocus={() => load()}
       onClear={() => {
-        onChange?.(undefined);
-        onSelect?.(undefined);
+        onChange?.(isMultiple ? [] : undefined);
+        onSelect?.(isMultiple ? [] : undefined);
       }}
       onChange={(value) => {
         onChange?.(value);
-      }}
-      onSelect={(_, option: any) => {
-        if (!option) {
-          onSelect?.(undefined);
-          return;
+        if (isMultiple) {
+          onSelect?.((value as any[]).map((v) => optionMap.get(v)));
+        } else {
+          onSelect?.(optionMap.get(value));
         }
-        onSelect?.(option.item);
       }}
     />
   );
 };
+
+interface AutoCompleteFastProps {
+  name: string | (string | number)[];
+  endpoint: string;
+  params?: Record<string, any>;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+  valueField?: string;
+  isMultiple?: boolean;
+  triggerOnMount?: boolean;
+  optionLabel?: (item: any) => React.ReactNode;
+  onSelect?: (item: any | any[] | undefined) => void;
+}
 
 export function AutoCompleteFast({
   name,
@@ -125,10 +149,14 @@ export function AutoCompleteFast({
   placeholder,
   required,
   disabled,
+  isMultiple,
   valueField = "_id",
+  triggerOnMount,
   optionLabel = (item) => item.description,
   onSelect,
 }: AutoCompleteFastProps) {
+  console.log(triggerOnMount, "FAST");
+
   return (
     <Form.Item
       name={name}
@@ -136,12 +164,14 @@ export function AutoCompleteFast({
       rules={required ? [$rules.required()] : []}
     >
       <RemoteSelect
+        triggerOnMount={triggerOnMount}
         endpoint={endpoint}
         params={params}
         placeholder={placeholder || "Seleccione un registro"}
         disabled={disabled}
         valueField={valueField}
         optionLabel={optionLabel}
+        isMultiple={isMultiple}
         onSelect={onSelect}
       />
     </Form.Item>

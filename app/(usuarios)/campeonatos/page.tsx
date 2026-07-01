@@ -24,9 +24,9 @@ export interface ChampionshipTeam {
   team: string;
   status: "activo" | "retirado" | "expulsado";
   // Fecha en la que union al campeonato
-  joinedAt: Date;
+  fechaIngreso: Date | Dayjs;
   // Fecha de salida
-  leftAt?: Date;
+  fechaSalida?: Date | Dayjs;
   // Posición final
   finalPosition?: number;
   // Puntos obtenidos

@@ -43,6 +43,8 @@ export default function PlayersPage() {
     endpoint: "/players",
     params: {
       $getAllFields: "true",
+      fields:
+        "team { name } league cedula names lastName birthDate jerseyNumber photo position status _movements",
     },
   });
 

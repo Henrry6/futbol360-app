@@ -20,6 +20,12 @@ export default function InsertChampions() {
       data.season = dayjs(data.season);
       data.startDate = dayjs(data.startDate);
       data.endDate = dayjs(data.endDate);
+      for (const team of data.teams) {
+        team.fechaIngreso = dayjs(team.fechaIngreso);
+        if (team.fechaSalida) {
+          team.fechaSalida = dayjs(team.fechaSalida);
+        }
+      }
     },
   });
   return (
@@ -40,7 +46,7 @@ export default function InsertChampions() {
           initialValues={insert.datos}
           onFinish={insert.onSubmit}
         >
-          <ChampionsForm />
+          <ChampionsForm form={insert.form} />
           <div>
             <Button type="primary" htmlType="submit">
               Guardar
