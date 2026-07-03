@@ -8,7 +8,11 @@ export default function PlayerForm() {
   return (
     <>
       <FormGrid>
-        <Form.Item name="cedula" label="Cédula" rules={[$rules.required()]}>
+        <Form.Item
+          name="cedula"
+          label="Cédula"
+          rules={[$rules.required(), $rules.min(10)]}
+        >
           <Input placeholder="Ingrese el número de cédula" />
         </Form.Item>
 
@@ -42,12 +46,12 @@ export default function PlayerForm() {
         >
           <FormNumber
             min={1}
-            max={99}
+            max={100}
             placeholder="Ingrese el número de camiseta"
           />
         </Form.Item>
 
-        <Form.Item name="position" label="Posición">
+        <Form.Item name="position" label="Posición" rules={[$rules.required()]}>
           <Select
             placeholder="Seleccione una posición"
             options={[

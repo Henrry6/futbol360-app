@@ -26,6 +26,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
             headerBg: "#ffffff",
             headerColor: "#000000",
           },
+          Button: {
+            colorLink: "#51ad73",
+            // colorLinkHover: "#3f8f5d",
+            // colorLinkActive: "#2f6e47",
+          },
         },
       }}
     >

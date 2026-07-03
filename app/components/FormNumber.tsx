@@ -2,6 +2,10 @@ import { InputNumber, InputNumberProps } from "antd";
 
 export default function FormNumber(props: InputNumberProps) {
   return (
-    <InputNumber {...props} className={`w-full! ${props.className ?? ""}`} />
+    <InputNumber
+      {...props}
+      className={`w-full! ${props.className ?? ""}`}
+      autoComplete="off"
+    />
   );
 }

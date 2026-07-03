@@ -83,7 +83,15 @@ export default function LayoutUsuarios({
           </div>
         </Header>
 
-        <Content className="p-4 md:p-6">{children}</Content>
+        <Content
+          style={{
+            minWidth: 0,
+            overflow: "auto",
+          }}
+          className="p-4 md:p-6"
+        >
+          {children}
+        </Content>
       </Layout>
 
       <Drawer

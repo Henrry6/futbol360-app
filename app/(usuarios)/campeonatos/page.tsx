@@ -19,6 +19,7 @@ import {
   Spin,
   Typography,
 } from "antd";
+import ResponsiveCard from "@/components/ResponsiveCard";
 
 export interface ChampionshipTeam {
   team: string;
@@ -72,6 +73,7 @@ export default function CampeonatosPage() {
     },
   });
 
+  console.log("data", data);
   return (
     <Spin spinning={loading}>
       <div className="p-6">
@@ -84,32 +86,52 @@ export default function CampeonatosPage() {
           onSearch={setSearch}
           onRefresh={refresh}
         />
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-4">
           {data.map((championship) => (
-            <Card
+            <ResponsiveCard
               key={championship._id}
-              hoverable
-              className="rounded-xl shadow-sm"
-            >
-              <div className="flex justify-between items-start bg-linear-to-r from-green-200 to-indigo-300  rounded-t-xl p-4">
-                <div className="flex gap-3">
-                  <div className="text-4xl">🏆</div>
+              header={
+                <>
+                  <div className="flex items-start gap-3">
+                    <div className="text-4xl shrink-0">🏆</div>
+                    <div className="min-w-0">
+                      <Typography.Title
+                        level={5}
+                        className="white-space-nowrap"
+                      >
+                        {championship.name}
+                      </Typography.Title>
 
-                  <div>
-                    <Typography.Title level={5} className="mb-0">
-                      {championship.name}
-                    </Typography.Title>
-
-                    <Typography.Text type="secondary">
-                      Temporada {$filtros.date(championship.season, "YYYY")}
-                    </Typography.Text>
+                      <Typography.Text type="secondary">
+                        Temporada {$filtros.date(championship.season, "YYYY")}
+                      </Typography.Text>
+                    </div>
                   </div>
-                </div>
-                <TagButtons status={championship.status} />
-              </div>
 
-              <Divider />
+                  <TagButtons
+                    status={championship.status}
+                    className="self-start"
+                  />
+                </>
+              }
+              footer={
+                <Space>
+                  <Button
+                    icon={<EditOutlined />}
+                    onClick={() =>
+                      router.push(`${pathname}/${championship._id}/edit`)
+                    }
+                  />
 
+                  <DeleteButton
+                    endpoint="/championship"
+                    id={championship._id}
+                    title={`¿Eliminar campeonato ${championship.name}?`}
+                    onSuccess={refresh}
+                  />
+                </Space>
+              }
+            >
               <Descriptions
                 column={1}
                 size="small"
@@ -121,7 +143,7 @@ export default function CampeonatosPage() {
                   },
                   {
                     label: "👥 Equipos",
-                    children: championship?.teams?.length,
+                    children: championship.teams.length,
                   },
                   {
                     label: "📅 Inicio",
@@ -135,34 +157,17 @@ export default function CampeonatosPage() {
                       ? dayjs(championship.endDate).format("DD/MM/YYYY")
                       : "-",
                   },
+                  ...(championship.champion
+                    ? [
+                        {
+                          label: "🥇 Campeón",
+                          children: championship.champion.name,
+                        },
+                      ]
+                    : []),
                 ]}
               />
-
-              <Divider />
-
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-500">
-                  {championship.champion && (
-                    <>🥇 {championship.champion.name}</>
-                  )}
-                </div>
-
-                <Space>
-                  <Button
-                    onClick={() =>
-                      router.push(pathname + "/" + championship._id + "/edit")
-                    }
-                    icon={<EditOutlined />}
-                  />
-                  <DeleteButton
-                    endpoint="/championship"
-                    id={championship._id}
-                    title={`¿Eliminar categoría ${championship.name}?`}
-                    onSuccess={refresh}
-                  />
-                </Space>
-              </div>
-            </Card>
+            </ResponsiveCard>
           ))}
         </div>
         {data.length === 0 && !loading && (

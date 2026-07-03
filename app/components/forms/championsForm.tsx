@@ -157,6 +157,7 @@ const ChampionshipForm: FC<{ form: FormInstance }> = ({ form }) => {
                           name={[field.name, "team"]}
                           label="Equipo"
                           endpoint="/teams"
+                          placeholder="Seleccione un equipo"
                           optionLabel={(item) => item.name}
                           triggerOnMount={true}
                           onSelect={(team) => {

@@ -142,6 +142,12 @@ export default function PlayersPage() {
                 ),
             },
             {
+              title: "Cédula",
+              dataIndex: "cedula",
+              align: "center",
+              width: 60,
+            },
+            {
               title: "Jugador",
               render: (_, record) => `${record.names} ${record.lastName}`,
             },

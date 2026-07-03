@@ -33,21 +33,19 @@ export default function InsertTeam() {
         hideRefresh
       />
       <Spin spinning={insert.loading}>
-        <Card>
-          <Form
-            form={insert.form}
-            layout="vertical"
-            initialValues={insert.datos}
-            onFinish={insert.onSubmit}
-          >
-            <TeamForm />
-            <div>
-              <Button type="primary" htmlType="submit">
-                Guardar
-              </Button>
-            </div>
-          </Form>
-        </Card>
+        <Form
+          form={insert.form}
+          layout="vertical"
+          initialValues={insert.datos}
+          onFinish={insert.onSubmit}
+        >
+          <TeamForm />
+          <div>
+            <Button type="primary" htmlType="submit">
+              Guardar
+            </Button>
+          </div>
+        </Form>
       </Spin>
     </div>
   );

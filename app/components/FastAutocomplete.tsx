@@ -14,6 +14,11 @@ interface RemoteSelectProps {
   placeholder?: string;
   disabled?: boolean;
   isMultiple?: boolean;
+  /**
+   * El trigger permite cargar los datos del select al montar el componente,
+   * esto es útil cuando se quiere obtener el objeto completo del valor inicial.
+   * Por defecto es false.
+   */
   triggerOnMount?: boolean;
   valueField: string;
   optionLabel: (item: any) => React.ReactNode;
@@ -83,7 +88,6 @@ const RemoteSelect = ({
   }, [options]);
 
   useEffect(() => {
-    console.log("triggerOnMount", value, optionMap, triggerOnMount);
     if (!triggerOnMount || value == null) return;
 
     if (isMultiple) {
@@ -127,7 +131,7 @@ const RemoteSelect = ({
 };
 
 interface AutoCompleteFastProps {
-  name: string | (string | number)[];
+  name?: string | (string | number)[];
   endpoint: string;
   params?: Record<string, any>;
   label?: string;
@@ -155,8 +159,6 @@ export function AutoCompleteFast({
   optionLabel = (item) => item.description,
   onSelect,
 }: AutoCompleteFastProps) {
-  console.log(triggerOnMount, "FAST");
-
   return (
     <Form.Item
       name={name}

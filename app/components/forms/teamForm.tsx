@@ -1,8 +1,20 @@
-import { DatePicker, Divider, Form, Input, Select } from "antd";
+import {
+  Card,
+  DatePicker,
+  Divider,
+  Form,
+  Input,
+  Select,
+  Typography,
+} from "antd";
 import FormGrid from "../FormGrid";
 import { $rules } from "@/assets/utils";
+import { useParams } from "next/navigation";
+import ListadosJugadores from "../players/ListadoJugadores";
 
 export default function TeamForm() {
+  const { id } = useParams();
+
   return (
     <>
       <FormGrid>
@@ -78,6 +90,11 @@ export default function TeamForm() {
           <Input placeholder="Ingrese el nombre del tesorero" />
         </Form.Item>
       </FormGrid>
+      <Divider className="col-span-2" />
+      <Typography.Title level={5}>Jugadores del equipo</Typography.Title>
+      <Card className="mb-4!">
+        <ListadosJugadores teamId={id as string} />
+      </Card>
     </>
   );
 }

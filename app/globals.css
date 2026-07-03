@@ -5,6 +5,11 @@
   --foreground: #171717;
 }
 
+.ant-table {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

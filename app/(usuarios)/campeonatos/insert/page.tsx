@@ -6,6 +6,7 @@ import { Button, Form, Spin } from "antd";
 import PageHeader from "@/components/PageHeader";
 import { useVisataInsert } from "@/assets/vistaInsert";
 import ChampionsForm from "@/components/forms/championsForm";
+import { useShowMessage } from "@/components/utils/ShowError";
 
 export default function InsertChampions() {
   const insert = useVisataInsert<Championship>({
@@ -28,6 +29,23 @@ export default function InsertChampions() {
       }
     },
   });
+  const message = useShowMessage();
+
+  const onPreSubmit = (values: any) => {
+    const teams = values.teams ?? [];
+    const repeated = teams.find(
+      (team: any, index: number) =>
+        teams.findIndex((t: any) => t.team === team.team) !== index,
+    );
+    if (repeated) {
+      message(
+        `El equipo "${repeated.teamName}" está seleccionado más de una vez.`,
+        "error",
+      );
+      return;
+    }
+    insert.onSubmit(values);
+  };
   return (
     <div className="p-6">
       <PageHeader
@@ -44,7 +62,7 @@ export default function InsertChampions() {
           form={insert.form}
           layout="vertical"
           initialValues={insert.datos}
-          onFinish={insert.onSubmit}
+          onFinish={onPreSubmit}
         >
           <ChampionsForm form={insert.form} />
           <div>
