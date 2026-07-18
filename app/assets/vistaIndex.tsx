@@ -63,8 +63,6 @@ export function useVistaIndex<T>({
 
   useEffect(() => {
     if (!autoLoad) return;
-    console.log("useEffect");
-
     refresh();
   }, [refresh, autoLoad]);
 

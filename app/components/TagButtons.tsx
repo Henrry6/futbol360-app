@@ -25,6 +25,10 @@ export const dataStatus: StatusItem[] = [
   { id: "clausura", description: "Clausura", color: "purple" },
   { id: "copa", description: "Copa", color: "magenta" },
   { id: "amistoso", description: "Amistoso", color: "cyan" },
+  //Partidos
+  { id: "programado", description: "Programado", color: "purple" },
+  { id: "en_juego", description: "En juego", color: "green" },
+  { id: "suspendido", description: "Suspendido", color: "red" },
   // Delete
   { id: "anulado", description: "Anulado", color: "red" },
   { id: "cancelado", description: "Cancelado", color: "red" },

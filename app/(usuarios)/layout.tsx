@@ -1,9 +1,9 @@
 "use client";
 
-import { menus } from "@/assets/menus";
 import { Drawer, Grid, Layout } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getMenuByRoles } from "@/assets/menus";
 import { useAuthStore } from "@/services/store";
 import { MenuOutlined } from "@ant-design/icons";
 import AppHeader from "@/components/layout/AppHeader";
@@ -34,9 +34,9 @@ export default function LayoutUsuarios({
   if (!token) {
     return null;
   }
+  console.log(user, "USERRR");
 
-  const menu = menus.directivo();
-
+  const menu = getMenuByRoles(user?.roles ?? []);
   return (
     <Layout style={{ minHeight: "100vh" }}>
       {!isMobileMd && (

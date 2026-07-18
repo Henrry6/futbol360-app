@@ -3,7 +3,6 @@
 import { Dayjs } from "dayjs";
 import $filtros from "@/assets/utils";
 import { Movement } from "@/types/global";
-import EmptyState from "@/components/Empty";
 import PageHeader from "@/components/PageHeader";
 import { EditOutlined, TeamOutlined } from "@ant-design/icons";
 import TagButtons from "@/components/TagButtons";

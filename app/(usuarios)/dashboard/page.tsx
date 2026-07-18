@@ -60,9 +60,9 @@ export default function DashboardPage() {
     },
     {
       title: "Partidos",
-      value: data?.jugadores ?? 0,
+      value: data?.partidos ?? 0,
       icon: <CalendarOutlined />,
-      route: "/matches",
+      route: "/matchs",
       color: "from-violet-400 to-purple-600",
     },
     {

@@ -44,7 +44,12 @@ export default function DeleteButton({
       cancelText="No"
       onConfirm={handleDelete}
     >
-      <Button danger loading={loading} icon={<DeleteOutlined />} />
+      <Button
+        title="Eliminar"
+        danger
+        loading={loading}
+        icon={<DeleteOutlined />}
+      />
     </Popconfirm>
   );
 }

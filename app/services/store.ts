@@ -4,7 +4,7 @@ import { persist } from "zustand/middleware";
 export interface User {
   _id: string;
   name: string;
-  role: "master" | "admin" | "directivo" | "player";
+  roles: ("master" | "admin" | "directivo" | "player" | "official")[];
   league: string;
   nameLiga: string;
   code: string;
@@ -19,7 +19,7 @@ interface AuthStore {
   setHydrated: (value: boolean) => void;
   setAuth: (token: string, user: User, loginType: "admin" | "user") => void;
   logout: () => void;
-  hasRole: (roles: User["role"][]) => boolean;
+  hasRole: (roles: string | string[] | User["roles"]) => boolean;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -41,7 +41,7 @@ export const useAuthStore = create<AuthStore>()(
           token,
           user,
           loginType,
-          isAdmin: user.role === "master",
+          isAdmin: user.roles.includes("master"),
         }),
 
       logout: () =>
@@ -53,9 +53,12 @@ export const useAuthStore = create<AuthStore>()(
         }),
 
       hasRole: (roles) => {
-        const role = get().user?.role;
+        const userRoles = get().user?.roles;
+        if (!userRoles) return false;
 
-        return role ? roles.includes(role) : false;
+        const rolesToCheck = Array.isArray(roles) ? roles : [roles];
+
+        return userRoles.some((role) => rolesToCheck.includes(role));
       },
     }),
     {

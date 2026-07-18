@@ -5,7 +5,11 @@ import $filtros from "@/assets/utils";
 import { Movement } from "@/types/global";
 import EmptyState from "@/components/Empty";
 import PageHeader from "@/components/PageHeader";
-import { EditOutlined } from "@ant-design/icons";
+import {
+  CalendarOutlined,
+  EditOutlined,
+  ScheduleOutlined,
+} from "@ant-design/icons";
 import TagButtons from "@/components/TagButtons";
 import { useVistaIndex } from "@/assets/vistaIndex";
 import DeleteButton from "@/components/DeleteButton";
@@ -39,7 +43,7 @@ export interface Championship {
   _id: string;
   league: string;
   name: string;
-  category: string;
+  category: { name: string };
   // Año deportivo
   season: Date | Dayjs;
   // Apertura, Clausura, Temporada, Copa, etc.
@@ -69,11 +73,13 @@ export default function CampeonatosPage() {
   const { data, loading, refresh, setSearch } = useVistaIndex<Championship>({
     endpoint: "/championships",
     params: {
-      $getAllFields: "true",
+      fields: `name league category {name} teams stages currentStage champion \
+runnerUp thirdPlace status observations type startDate endDate season`,
     },
   });
 
-  console.log("data", data);
+  console.log(data);
+
   return (
     <Spin spinning={loading}>
       <div className="p-6">
@@ -103,7 +109,10 @@ export default function CampeonatosPage() {
                       </Typography.Title>
 
                       <Typography.Text type="secondary">
-                        Temporada {$filtros.date(championship.season, "YYYY")}
+                        Temporada{" "}
+                        {championship.season
+                          ? $filtros.date(championship.season, "YYYY")
+                          : "#"}
                       </Typography.Text>
                     </div>
                   </div>
@@ -117,14 +126,22 @@ export default function CampeonatosPage() {
               footer={
                 <Space>
                   <Button
+                    title="Editar"
                     icon={<EditOutlined />}
                     onClick={() =>
                       router.push(`${pathname}/${championship._id}/edit`)
                     }
                   />
-
+                  <Button
+                    title="Calendario"
+                    type="dashed"
+                    icon={<ScheduleOutlined />}
+                    onClick={() =>
+                      router.push(`${pathname}/${championship._id}/calendar`)
+                    }
+                  />
                   <DeleteButton
-                    endpoint="/championship"
+                    endpoint="/championships"
                     id={championship._id}
                     title={`¿Eliminar campeonato ${championship.name}?`}
                     onSuccess={refresh}
@@ -140,6 +157,10 @@ export default function CampeonatosPage() {
                   {
                     label: "Tipo",
                     children: <TagButtons status={championship.type} />,
+                  },
+                  {
+                    label: "Categoria",
+                    children: championship.category.name,
                   },
                   {
                     label: "👥 Equipos",
