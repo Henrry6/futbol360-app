@@ -34,8 +34,6 @@ export default function LayoutUsuarios({
   if (!token) {
     return null;
   }
-  console.log(user, "USERRR");
-
   const menu = getMenuByRoles(user?.roles ?? []);
   return (
     <Layout style={{ minHeight: "100vh" }}>

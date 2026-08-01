@@ -84,10 +84,10 @@ export const directivoMenu = [
         key: "/statistics",
         label: "Estadísticas",
       },
-      {
-        key: "/history",
-        label: "Historial",
-      },
+      // {
+      //   key: "/history",
+      //   label: "Historial",
+      // },
     ],
   },
 ];
@@ -143,9 +143,9 @@ export const getMenuByRoles = (roles: Role[]) => {
   const map = new Map<string, MenuItem>();
 
   roles?.forEach((role) => {
+    if (role === "admin") return;
     roleMenus[role]?.forEach((item) => {
       const current = map.get(item.key);
-
       if (!current) {
         map.set(item.key, {
           ...item,

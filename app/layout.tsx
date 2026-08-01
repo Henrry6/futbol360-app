@@ -20,12 +20,14 @@ export default function RootLayout({
 
 // project/
 // ├── app/
-// ├──├──(private)/
+// ├──├──(admin)/
+// ├──├──(login)/
+// ├──├──(usuarios)/
 // ├──├──components/
-// ├──├──login/
-// ├──├──services/
-// ├──├──global.css
-// ├──├──layout.tsx
+// ├──ervices/
+// ├──global.css
+// ├──layout.tsx
+// |--|not-found.tsx
 // ├──├──page.tsx
 // ├── tsconfig.json
 // ├──next.config.ts

@@ -35,7 +35,7 @@ export default function LayoutAdmin({
     }
   }, [token, isAdmin, router]);
 
-  if (!token || !isAdmin) {
+  if (!token) {
     return null;
   }
 

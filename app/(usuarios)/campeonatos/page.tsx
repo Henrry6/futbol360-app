@@ -133,11 +133,11 @@ runnerUp thirdPlace status observations type startDate endDate season`,
                     }
                   />
                   <Button
-                    title="Calendario"
+                    title="Gestionar campeonato"
                     type="dashed"
                     icon={<ScheduleOutlined />}
                     onClick={() =>
-                      router.push(`${pathname}/${championship._id}/calendar`)
+                      router.push(`${pathname}/${championship._id}/gestionar`)
                     }
                   />
                   <DeleteButton

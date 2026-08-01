@@ -82,7 +82,7 @@ export default function PageHeader({
 
       <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-center">
         <Title
-          level={2}
+          level={3}
           style={{
             margin: 0,
           }}
