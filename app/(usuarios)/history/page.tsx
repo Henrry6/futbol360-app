@@ -14,7 +14,10 @@ export default function HistorialPage() {
   const [activeTab, setActiveTab] = useState<string>("");
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [dateRange, setDateRange] = useState<any>(null);
+  const [dateRange, setDateRange] = useState<any>([
+    dayjs().startOf("month"),
+    dayjs().endOf("month"),
+  ]);
   const availableTabs = [
     user?.official?.canReferee && {
       key: "referee",
@@ -40,22 +43,17 @@ export default function HistorialPage() {
     if (!activeTab) return;
     try {
       setLoading(true);
-
       const params: any = {
         status: ["finalizado", "suspendido"],
       };
-
       if (activeTab === "referee") params.referee = user?.id;
       if (activeTab === "assistant") params.assistantReferees = user?.id;
       if (activeTab === "vocal") params.vocal = user?.id;
-
       if (dateRange) {
-        console.log(dateRange[0].toISOString(), dateRange[1].toISOString());
-        params.date = `{$gte}${dateRange[0].toISOString()},{$lte}${dateRange[1].toISOString()}`;
+        params.startDate = dayjs(dateRange[0]).startOf("day").toISOString();
+        params.endDate = dayjs(dateRange[1]).endOf("day").toISOString();
       }
-
       const { data } = await api.get(`/matchs`, { params });
-      console.log(data.data, "RESPOSNE");
       setMatches(data.data);
     } catch (error) {
       console.error(error);
@@ -122,6 +120,7 @@ export default function HistorialPage() {
         <RangePicker
           format="DD/MM/YYYY"
           onChange={(dates) => setDateRange(dates)}
+          value={dateRange}
         />
       }
     >
