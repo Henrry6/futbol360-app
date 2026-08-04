@@ -1,12 +1,12 @@
 import { User } from "@/services/store";
 import type { ReactNode } from "react";
+import { GiSoccerBall } from "react-icons/gi";
 import {
   TrophyOutlined,
   TeamOutlined,
   UserOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
-import { GiSoccerBall } from "react-icons/gi";
 
 type MenuItem = {
   key: string;

@@ -2,8 +2,11 @@
 
 import { FC } from "react";
 import { Menu } from "antd";
+import Link from "next/link";
 import type { MenuProps } from "antd";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
+
+type MenuItemType = NonNullable<MenuProps["items"]>[number];
 
 type Props = {
   showHeader?: boolean;
@@ -12,15 +15,32 @@ type Props = {
   items: MenuProps["items"];
 };
 
+// Envuelve en <Link> solo los items hoja (sin children), que son los navegables.
+const buildItems = (items: MenuProps["items"]): MenuProps["items"] => {
+  return items?.map((item) => {
+    if (!item) return item;
+
+    if ("children" in item && item.children?.length) {
+      return {
+        ...item,
+        children: buildItems(item.children as MenuProps["items"]),
+      } as MenuItemType;
+    }
+
+    return {
+      ...item,
+      label: <Link href={String(item.key)}>{(item as any).label}</Link>,
+    } as MenuItemType;
+  });
+};
+
 const AppSidebar: FC<Props> = ({
   showHeader = true,
   title = "⚽ Futbol360",
   subtitle,
   items,
 }) => {
-  const router = useRouter();
   const pathname = usePathname();
-
   return (
     <div className="h-full flex flex-col">
       {showHeader && (
@@ -44,8 +64,7 @@ const AppSidebar: FC<Props> = ({
         style={{
           background: "#DCFCE7",
         }}
-        items={items}
-        onClick={(item) => router.push(item.key)}
+        items={buildItems(items)}
       />
     </div>
   );

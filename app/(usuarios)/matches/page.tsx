@@ -1,6 +1,6 @@
 "use client";
 
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import $filtros from "@/assets/utils";
 import { Movement } from "@/types/global";
 import PageHeader from "@/components/PageHeader";
@@ -27,6 +27,7 @@ import {
   Table,
 } from "antd";
 import InfoGrid from "@/components/InfoGrid";
+import { useAuthStore } from "@/services/store";
 
 // export interface Match {
 //   _id: string;
@@ -76,23 +77,22 @@ export interface Match {
   };
 
   date?: Date | Dayjs;
-
+  hour?: Date | Dayjs;
+  vocal?: { name: string };
   localGoals?: number;
-
   visitorGoals?: number;
-
   status: "programado" | "en_juego" | "finalizado" | "suspendido";
-
   observations?: string;
-
   _movements: Movement[];
 }
 
 export default function EquiposPage() {
+  const user = useAuthStore((state) => state.user);
   const index = useVistaIndex<Match>({
     endpoint: "/matchs",
     params: {
       $getAllFields: "true",
+      vocal: user?.id,
     },
   });
 
@@ -113,30 +113,6 @@ export default function EquiposPage() {
           expandedRowRender: (record) => (
             <InfoGrid
               items={[
-                {
-                  label: "Campeonato",
-                  value: record.championship.name,
-                },
-                {
-                  label: "Etapa",
-                  value: record.stage.name,
-                },
-                {
-                  label: "Jornada",
-                  value: record.round.name,
-                },
-                {
-                  label: "Estado",
-                  value: <TagButtons status={record.status} />,
-                },
-                {
-                  label: "Fecha",
-                  value: record.date ? $filtros.date(record.date) : "-",
-                },
-                {
-                  label: "Marcador",
-                  value: `${record.localGoals ?? 0} - ${record.visitorGoals ?? 0}`,
-                },
                 {
                   label: "Observaciones",
                   value: record.observations || "-",
@@ -189,11 +165,28 @@ export default function EquiposPage() {
           },
 
           {
-            title: "Fecha",
+            title: "Fecha / Hora",
             dataIndex: "date",
             width: 130,
             align: "center",
-            render: (value) => (value ? $filtros.date(value) : "-"),
+            render: (_, record) => (
+              <Space
+                orientation="vertical"
+                size={0}
+                style={{ lineHeight: 1.3 }}
+              >
+                <span>{dayjs(record.date).format("DD/MM/YYYY")}</span>
+                <span>{dayjs(record.hour).format("HH:mm")}</span>
+                <span
+                  style={{
+                    fontSize: 14,
+                    color: "#1042cc",
+                  }}
+                >
+                  {record.vocal?.name ?? "—"}
+                </span>
+              </Space>
+            ),
           },
 
           {

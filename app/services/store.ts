@@ -2,12 +2,17 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface User {
-  _id: string;
+  id: string;
   name: string;
   roles: ("master" | "admin" | "directivo" | "player" | "official")[];
   league: string;
   nameLiga: string;
   code: string;
+  official?: {
+    canReferee: boolean;
+    canAssist: boolean;
+    canBeVocal: boolean;
+  };
 }
 
 interface AuthStore {

@@ -1,12 +1,13 @@
 "use client";
 
+import dayjs from "dayjs";
 import api from "@/services/api";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import InfoGrid from "@/components/InfoGrid";
 import PageHeader from "@/components/PageHeader";
 import TagButtons from "@/components/TagButtons";
 import { useShowError } from "@/components/utils/ShowError";
+import ProgramarPartido from "@/components/campeonato/ProgamarPartido";
 import {
   Card,
   Collapse,
@@ -17,6 +18,7 @@ import {
   Spin,
   Tabs,
   Empty,
+  Tag,
 } from "antd";
 import {
   EyeOutlined,
@@ -37,6 +39,32 @@ export default function GestionCampeonato() {
   // Cache de rounds por etapa: { [stageId]: Round[] }
   const [roundsByStage, setRoundsByStage] = useState<Record<string, any[]>>({});
   const [loadingRounds, setLoadingRounds] = useState(false);
+
+  const [matchesByRound, setMatchesByRound] = useState<Record<string, any[]>>(
+    {},
+  );
+  const [loadingMatches, setLoadingMatches] = useState<Record<string, boolean>>(
+    {},
+  );
+
+  const getMatchesByRound = async (roundId: string, force = false) => {
+    if (!force && matchesByRound[roundId]) return;
+
+    try {
+      setLoadingMatches((prev) => ({ ...prev, [roundId]: true }));
+      const { data } = await api.get(`/matchs`, {
+        params: { championship: id, round: roundId },
+      });
+      setMatchesByRound((prev) => ({
+        ...prev,
+        [roundId]: data.data,
+      }));
+    } catch (error) {
+      ShowError(error);
+    } finally {
+      setLoadingMatches((prev) => ({ ...prev, [roundId]: false }));
+    }
+  };
 
   const ShowError = useShowError();
   const { id } = useParams();
@@ -59,15 +87,12 @@ export default function GestionCampeonato() {
   };
 
   const getRoundsByStage = async (stageId: string) => {
-    // Si ya la tenemos cacheada, no volvemos a pedirla
     if (roundsByStage[stageId]) return;
-
     try {
       setLoadingRounds(true);
       const { data } = await api.get(`/rounds`, {
         params: { championship: id, stage: stageId },
       });
-      console.log("rounds for stage", stageId, data.data);
       setRoundsByStage((prev) => ({
         ...prev,
         [stageId]: data.data.sort((a: any, b: any) => a.round - b.round),
@@ -137,6 +162,10 @@ export default function GestionCampeonato() {
                     <Collapse
                       accordion
                       defaultActiveKey={["0"]}
+                      onChange={(key) => {
+                        const roundId = Array.isArray(key) ? key[0] : key;
+                        if (roundId) getMatchesByRound(roundId);
+                      }}
                       items={currentRounds.map((round: any) => ({
                         key: round._id,
                         label: (
@@ -151,98 +180,154 @@ export default function GestionCampeonato() {
                           </Space>
                         ),
                         children: (
-                          <Table
-                            rowKey="_id"
-                            pagination={false}
-                            locale={{
-                              emptyText:
-                                "No existen partidos para esta jornada.",
-                            }}
-                            dataSource={round.matches ?? []}
-                            columns={[
-                              {
-                                title: "Local",
-                                render: (_, record: any) => (
-                                  <Space>
-                                    <Avatar
-                                      src={record.localTeam?.logo}
-                                      icon={<TeamOutlined />}
-                                    />
-                                    {record.localTeam?.name}
-                                  </Space>
-                                ),
-                              },
-                              {
-                                title: "Marcador",
-                                align: "center",
-                                width: 120,
-                                render: (_, record: any) =>
-                                  record.status === "programado"
-                                    ? "vs"
-                                    : `${record.localGoals ?? 0} - ${record.visitorGoals ?? 0}`,
-                              },
-                              {
-                                title: "Visitante",
-                                render: (_, record: any) => (
-                                  <Space>
-                                    <Avatar
-                                      src={record.visitorTeam?.logo}
-                                      icon={<TeamOutlined />}
-                                    />
-                                    {record.visitorTeam?.name}
-                                  </Space>
-                                ),
-                              },
-                              {
-                                title: "Estado",
-                                width: 150,
-                                align: "center",
-                                render: (_, record: any) => (
-                                  <TagButtons status={record.status} />
-                                ),
-                              },
-                              {
-                                title: "",
-                                width: 220,
-                                align: "center",
-                                render: (_, record: any) => (
-                                  <Space>
-                                    {record.status === "programado" && (
-                                      <Button
-                                        type="primary"
-                                        icon={<CaretRightOutlined />}
+                          <Spin spinning={!!loadingMatches[round._id]}>
+                            <Table
+                              rowKey="_id"
+                              pagination={false}
+                              locale={{
+                                emptyText:
+                                  "No existen partidos para esta jornada.",
+                              }}
+                              dataSource={matchesByRound[round._id] ?? []}
+                              columns={[
+                                {
+                                  title: "Local",
+                                  render: (_, record: any) => (
+                                    <Space>
+                                      <Avatar
+                                        src={record.localTeam?.logo}
+                                        icon={<TeamOutlined />}
+                                      />
+                                      {record.localTeam?.name}
+                                    </Space>
+                                  ),
+                                },
+                                {
+                                  title: "Marcador / Programación",
+                                  align: "center",
+                                  width: 140,
+                                  render: (_, record: any) => {
+                                    if (record.status !== "programado") {
+                                      return `${record.localGoals ?? 0} - ${record.visitorGoals ?? 0}`;
+                                    }
+
+                                    const isScheduled =
+                                      record.date &&
+                                      record.hour &&
+                                      record.vocal;
+
+                                    if (!isScheduled) {
+                                      return "vs";
+                                    }
+
+                                    return (
+                                      <Space
+                                        orientation="vertical"
+                                        size={0}
+                                        style={{ lineHeight: 1.3 }}
                                       >
-                                        Iniciar
-                                      </Button>
-                                    )}
+                                        <span>
+                                          {dayjs(record.date).format(
+                                            "DD/MM/YYYY",
+                                          )}
+                                        </span>
+                                        <span>
+                                          {dayjs(record.hour).format("HH:mm")}
+                                        </span>
+                                        <span
+                                          style={{
+                                            fontSize: 14,
+                                            color: "#1042cc",
+                                          }}
+                                        >
+                                          {record.vocal?.name ?? "—"}
+                                        </span>
+                                      </Space>
+                                    );
+                                  },
+                                },
+                                {
+                                  title: "Visitante",
+                                  render: (_, record: any) => (
+                                    <Space>
+                                      <Avatar
+                                        src={record.visitorTeam?.logo}
+                                        icon={<TeamOutlined />}
+                                      />
+                                      {record.visitorTeam?.name}
+                                    </Space>
+                                  ),
+                                },
+                                {
+                                  title: "Estado",
+                                  width: 150,
+                                  align: "center",
+                                  render: (_, record: any) => (
+                                    <TagButtons status={record.status} />
+                                  ),
+                                },
+                                {
+                                  title: "",
+                                  width: 220,
+                                  align: "center",
+                                  render: (_, record: any) => {
+                                    const isScheduled =
+                                      record.date &&
+                                      record.hour &&
+                                      record.vocal;
 
-                                    {record.status === "en_juego" && (
-                                      <>
-                                        <Button icon={<FormOutlined />}>
-                                          Vocalía
-                                        </Button>
-                                        <Button
-                                          danger
-                                          icon={<RollbackOutlined />}
-                                        />
-                                        <Button
-                                          type="primary"
-                                          icon={<CheckCircleOutlined />}
-                                        />
-                                      </>
-                                    )}
+                                    return (
+                                      <Space>
+                                        {record.status === "programado" && (
+                                          <>
+                                            <ProgramarPartido
+                                              match={record}
+                                              onSuccess={() => {
+                                                getMatchesByRound(
+                                                  round._id,
+                                                  true,
+                                                );
+                                              }}
+                                            />
+                                            <Button
+                                              type="primary"
+                                              icon={<CaretRightOutlined />}
+                                              disabled={!isScheduled}
+                                            >
+                                              Iniciar
+                                            </Button>
+                                          </>
+                                        )}
 
-                                    {(record.status === "finalizado" ||
-                                      record.status === "suspendido") && (
-                                      <Button icon={<EyeOutlined />}>
-                                        Ver
-                                      </Button>
-                                    )}
-                                  </Space>
-                                ),
-                              },
-                            ]}
-                          />
+                                        {record.status === "en_juego" && (
+                                          <>
+                                            <Button icon={<FormOutlined />}>
+                                              Vocalía
+                                            </Button>
+                                            <Button
+                                              danger
+                                              icon={<RollbackOutlined />}
+                                            />
+                                            <Button
+                                              type="primary"
+                                              icon={<CheckCircleOutlined />}
+                                            />
+                                          </>
+                                        )}
+
+                                        {(record.status === "finalizado" ||
+                                          record.status === "suspendido") && (
+                                          <Button icon={<EyeOutlined />}>
+                                            Ver
+                                          </Button>
+                                        )}
+                                      </Space>
+                                    );
+                                  },
+                                },
+                              ]}
+                            />
+                          </Spin>
                         ),
                       }))}
                     />
