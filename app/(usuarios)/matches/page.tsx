@@ -1,75 +1,45 @@
 "use client";
 
+import api from "@/services/api";
 import dayjs, { Dayjs } from "dayjs";
-import $filtros from "@/assets/utils";
 import { Movement } from "@/types/global";
+import InfoGrid from "@/components/InfoGrid";
+import { useRouter } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
+import { useAuthStore } from "@/services/store";
+import TagButtons from "@/components/TagButtons";
+import { useVistaIndex } from "@/assets/vistaIndex";
+import { Avatar, Button, Space, Spin, Table } from "antd";
+import { useShowError } from "@/components/utils/ShowError";
 import {
   CaretRightOutlined,
   CheckCircleOutlined,
-  EditOutlined,
   EyeOutlined,
   FormOutlined,
   RollbackOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
-import TagButtons from "@/components/TagButtons";
-import { useVistaIndex } from "@/assets/vistaIndex";
-import DeleteButton from "@/components/DeleteButton";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  Avatar,
-  Button,
-  Descriptions,
-  Divider,
-  Space,
-  Spin,
-  Table,
-} from "antd";
-import InfoGrid from "@/components/InfoGrid";
-import { useAuthStore } from "@/services/store";
-
-// export interface Match {
-//   _id: string;
-//   league: string;
-//   championship: string;
-//   round: string;
-//   stage: string;
-//   localTeam: string;
-//   visitorTeam: string;
-//   date?: Date | Dayjs;
-//   localGoals?: number;
-//   visitorGoals?: number;
-//   status: "programado" | "en_juego" | "finalizado" | "suspendido";
-//   observations?: string;
-//   _movements: Movement[];
-// }
 
 export interface Match {
   _id: string;
-
   championship: {
     _id: string;
     name: string;
   };
-
   stage: {
     _id: string;
     name: string;
   };
-
   round: {
     _id: string;
     name: string;
     round: number;
   };
-
   localTeam: {
     _id: string;
     name: string;
     logo?: string;
   };
-
   visitorTeam: {
     _id: string;
     name: string;
@@ -81,6 +51,7 @@ export interface Match {
   vocal?: { name: string };
   localGoals?: number;
   visitorGoals?: number;
+  matchReport?: string;
   status: "programado" | "en_juego" | "finalizado" | "suspendido";
   observations?: string;
   _movements: Movement[];
@@ -88,6 +59,7 @@ export interface Match {
 
 export default function EquiposPage() {
   const user = useAuthStore((state) => state.user);
+  const router = useRouter();
   const index = useVistaIndex<Match>({
     endpoint: "/matchs",
     params: {
@@ -95,6 +67,27 @@ export default function EquiposPage() {
       vocal: user?.id,
     },
   });
+  const ShowError = useShowError();
+
+  const handleStartMatch = async (record: any) => {
+    try {
+      const { data } = await api.post(`/matchs/${record._id}/start`);
+      router.push(`/campeonatos/${record.championship}/vocalia/${data._id}`);
+    } catch (error) {
+      ShowError(error);
+    } finally {
+      index.refresh();
+    }
+  };
+  const handleRevertStart = async (record: any) => {
+    try {
+      await api.delete(`/matchs/${record._id}/revert-start`);
+    } catch (error) {
+      ShowError(error);
+    } finally {
+      index.refresh();
+    }
+  };
 
   return (
     <Spin spinning={index.loading}>
@@ -205,16 +198,33 @@ export default function EquiposPage() {
               <Space>
                 <Space>
                   {record.status === "programado" && (
-                    <Button type="primary" icon={<CaretRightOutlined />}>
+                    <Button
+                      type="primary"
+                      icon={<CaretRightOutlined />}
+                      onClick={() => handleStartMatch(record)}
+                    >
                       Iniciar
                     </Button>
                   )}
 
                   {record.status === "en_juego" && (
                     <>
-                      <Button icon={<FormOutlined />}>Vocalía</Button>
+                      <Button
+                        icon={<FormOutlined />}
+                        onClick={() =>
+                          router.push(
+                            `/campeonatos/${record.championship}/vocalia/${record.matchReport}`,
+                          )
+                        }
+                      >
+                        Vocalía
+                      </Button>
 
-                      <Button danger icon={<RollbackOutlined />}>
+                      <Button
+                        danger
+                        icon={<RollbackOutlined />}
+                        onClick={() => handleRevertStart(record)}
+                      >
                         Revertir
                       </Button>
 

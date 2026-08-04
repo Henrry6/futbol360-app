@@ -30,7 +30,9 @@ export default function AppHeader() {
       <div className="flex items-center gap-3 cursor-pointer">
         <div className="hidden sm:block">
           <div className="font-medium leading-none">{user?.name}</div>
-          <div className="text-xs text-gray-500 capitalize">{user?.role}</div>
+          <div className="text-xs text-gray-500 capitalize">
+            {user?.roles?.join(", ")}
+          </div>
         </div>
         <Avatar icon={<UserOutlined />} />
       </div>

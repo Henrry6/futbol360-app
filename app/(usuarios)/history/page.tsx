@@ -4,13 +4,15 @@ import dayjs from "dayjs";
 import api from "@/services/api";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/services/store";
-import { Tabs, Table, DatePicker, Tag, Card, Empty } from "antd";
 import TagButtons from "@/components/TagButtons";
+import { useShowError } from "@/components/utils/ShowError";
+import { Tabs, Table, DatePicker, Tag, Card, Empty } from "antd";
 
 const { RangePicker } = DatePicker;
 
 export default function HistorialPage() {
   const user = useAuthStore((state) => state.user);
+  const ShowError = useShowError();
   const [activeTab, setActiveTab] = useState<string>("");
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,13 +52,12 @@ export default function HistorialPage() {
       if (activeTab === "assistant") params.assistantReferees = user?.id;
       if (activeTab === "vocal") params.vocal = user?.id;
       if (dateRange) {
-        params.startDate = dayjs(dateRange[0]).startOf("day").toISOString();
-        params.endDate = dayjs(dateRange[1]).endOf("day").toISOString();
+        params.date = `{$gte}${dateRange[0].toISOString()}{$lte}${dateRange[1].toISOString()}`;
       }
       const { data } = await api.get(`/matchs`, { params });
       setMatches(data.data);
     } catch (error) {
-      console.error(error);
+      ShowError(error);
     } finally {
       setLoading(false);
     }
