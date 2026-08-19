@@ -15,7 +15,7 @@ type MenuItem = {
   children?: MenuItem[];
 };
 
-export const adminMenu: MenuItem[] = [
+export const masterMenu: MenuItem[] = [
   {
     key: "/dashboard",
     label: "Inicio",
@@ -27,6 +27,17 @@ export const adminMenu: MenuItem[] = [
   },
   {
     key: "/users",
+    icon: <UserOutlined />,
+    label: "Usuarios",
+  },
+];
+export const adminMenu: MenuItem[] = [
+  {
+    key: "/dashboard",
+    label: "Inicio",
+  },
+  {
+    key: "/usuarios",
     icon: <UserOutlined />,
     label: "Usuarios",
   },
@@ -130,7 +141,7 @@ export const playerMenu = [
 ];
 
 export const roleMenus = {
-  master: adminMenu,
+  master: masterMenu,
   admin: adminMenu,
   directivo: directivoMenu,
   official: officialMenu,
@@ -143,7 +154,7 @@ export const getMenuByRoles = (roles: Role[]) => {
   const map = new Map<string, MenuItem>();
 
   roles?.forEach((role) => {
-    if (role === "admin") return;
+    // if (role === "maste") return;
     roleMenus[role]?.forEach((item) => {
       const current = map.get(item.key);
       if (!current) {

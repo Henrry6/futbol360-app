@@ -43,7 +43,7 @@ export interface Championship {
   _id: string;
   league: string;
   name: string;
-  category: { name: string };
+  category: any;
   // Año deportivo
   season: Date | Dayjs;
   // Apertura, Clausura, Temporada, Copa, etc.

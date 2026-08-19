@@ -8,6 +8,7 @@ import { MenuOutlined } from "@ant-design/icons";
 import { useAuthStore } from "@/services/store";
 import AppHeader from "@/components/layout/AppHeader";
 import AppSidebar from "@/components/layout/AppSidebar";
+import Bitacora from "@/components/Movements";
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
@@ -102,6 +103,8 @@ export default function LayoutAdmin({
       >
         <AppSidebar subtitle="ADMIN" items={adminMenu} showHeader={false} />
       </Drawer>
+
+      <Bitacora />
     </Layout>
   );
 }

@@ -8,6 +8,7 @@ import { useAuthStore } from "@/services/store";
 import { MenuOutlined } from "@ant-design/icons";
 import AppHeader from "@/components/layout/AppHeader";
 import AppSidebar from "@/components/layout/AppSidebar";
+import Bitacora from "@/components/Movements";
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
@@ -109,6 +110,8 @@ export default function LayoutUsuarios({
       >
         <AppSidebar showHeader={false} items={menu} />
       </Drawer>
+
+      <Bitacora />
     </Layout>
   );
 }

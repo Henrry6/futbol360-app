@@ -28,6 +28,7 @@ import {
   CheckCircleOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
+import { BotonMovimientos } from "@/components/Movements";
 
 const { Panel } = Collapse;
 
@@ -321,6 +322,9 @@ export default function GestionCampeonato() {
                                             Ver
                                           </Button>
                                         )}
+                                        <BotonMovimientos
+                                          movimientos={record._movements}
+                                        />
                                       </Space>
                                     );
                                   },

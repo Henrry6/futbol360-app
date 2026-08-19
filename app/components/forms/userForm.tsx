@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { League } from "@/(admin)/leagues/page";
 import { useShowError } from "../utils/ShowError";
 import { Checkbox, Form, Input, Select, Space } from "antd";
+import { useAuthStore } from "@/services/store";
 
 export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
   const [loading, setLoading] = useState(false);
   const ShowError = useShowError();
   const form = Form.useFormInstance();
+  const user = useAuthStore((state) => state.user);
 
   const [selectLeagues, setLeagues] = useState<League[]>([]);
   const loadLeagues = async () => {
@@ -35,6 +37,12 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
       form.setFieldValue("official", undefined);
     }
   }, [isOfficial]);
+
+  useEffect(() => {
+    if (user?.league) {
+      form.setFieldValue("leagues", [user.league]);
+    }
+  }, [user?.league]);
 
   return (
     <>
@@ -78,7 +86,7 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
             { value: "directivo", label: "Directivo" },
             { value: "player", label: "Jugador" },
             { value: "official", label: "Oficial" },
-          ]}
+          ].filter((role) => role.value !== "master" || !user?.league)}
         />
       </Form.Item>
 
@@ -155,11 +163,14 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
         <Select
           mode="multiple"
           loading={loading}
+          disabled={!!user?.league}
           placeholder="Seleccione ligas"
-          options={selectLeagues.map((league) => ({
-            value: league._id,
-            label: league.name,
-          }))}
+          options={selectLeagues
+            .filter((league) => !user?.league || league._id === user.league)
+            .map((league) => ({
+              value: league._id,
+              label: league.name,
+            }))}
         />
       </Form.Item>
     </>

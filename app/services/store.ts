@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { Movement } from "@/types/utils";
 
 export interface User {
   id: string;
@@ -21,6 +22,8 @@ interface AuthStore {
   user: User | null;
   loginType: "admin" | "user" | null;
   isAdmin: boolean;
+  bitacora: Movement[];
+  setBitacora: (movements: Movement[]) => void;
   setHydrated: (value: boolean) => void;
   setAuth: (token: string, user: User, loginType: "admin" | "user") => void;
   logout: () => void;
@@ -35,6 +38,8 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       loginType: null,
       isAdmin: false,
+      bitacora: [],
+      setBitacora: (movements) => set({ bitacora: movements }),
 
       setHydrated: (value) =>
         set({

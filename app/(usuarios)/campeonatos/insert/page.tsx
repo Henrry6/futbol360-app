@@ -18,9 +18,11 @@ export default function InsertChampions() {
       status: "activo",
     },
     formatearDataInicial: (data) => {
+      console.log(data, "init");
       data.season = dayjs(data.season);
       data.startDate = dayjs(data.startDate);
       data.endDate = dayjs(data.endDate);
+      data.category = data.category?._id;
       for (const team of data.teams) {
         team.fechaIngreso = dayjs(team.fechaIngreso);
         if (team.fechaSalida) {
@@ -46,6 +48,7 @@ export default function InsertChampions() {
     }
     insert.onSubmit(values);
   };
+  console.log(insert.datos, "DATA");
   return (
     <div className="p-6">
       <PageHeader
@@ -64,7 +67,12 @@ export default function InsertChampions() {
           initialValues={insert.datos}
           onFinish={onPreSubmit}
         >
-          <ChampionsForm form={insert.form} />
+          <ChampionsForm
+            form={insert.form}
+            championshipId={
+              typeof insert.id === "string" ? insert.id : undefined
+            }
+          />
           <div>
             <Button type="primary" htmlType="submit">
               Guardar

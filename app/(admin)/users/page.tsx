@@ -8,6 +8,7 @@ import { useAuthStore } from "@/services/store";
 import UserForm from "@/components/forms/userForm";
 import DeleteButton from "@/components/DeleteButton";
 import { useShowError } from "@/components/utils/ShowError";
+import { BotonMovimientos } from "@/components/Movements";
 
 export interface User {
   _id: string;
@@ -35,6 +36,7 @@ export default function UsersPage() {
           $getAllFields: "true",
         },
       });
+      console.log(data.data);
       setData(data.data);
     } catch (error) {
       await showError(error);
@@ -61,9 +63,17 @@ export default function UsersPage() {
       dataIndex: "email",
     },
     {
-      title: "Rol",
-      dataIndex: "role",
-      render: (role: string) => <Tag color="blue">{role}</Tag>,
+      title: "Roles",
+      dataIndex: "roles",
+      render: (roles: any) => (
+        <div className="flex flex-wrap gap-2">
+          {roles.map((x: string, ind: number) => (
+            <Tag key={ind} color="blue" className="mr-5">
+              {x}
+            </Tag>
+          ))}
+        </div>
+      ),
     },
     {
       title: "Estado",
@@ -97,6 +107,7 @@ export default function UsersPage() {
                   title={`¿Eliminar usuario ${user.name}?`}
                   onSuccess={init}
                 />
+                <BotonMovimientos movimientos={user._movements} />
               </Space>
             ),
           },
