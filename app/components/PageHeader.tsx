@@ -25,6 +25,7 @@ export interface PageHeaderProps {
   loading?: boolean;
   hideSearch?: boolean;
   hideRefresh?: boolean;
+  hideInsert?: boolean;
   insertLabel?: string;
   onRefresh?: () => void;
   onSearch?: (e: string) => void;
@@ -36,6 +37,7 @@ export default function PageHeader({
   loading = false,
   hideSearch = false,
   hideRefresh = false,
+  hideInsert = false,
   insertLabel = "Crear",
   onRefresh,
   onSearch,
@@ -118,7 +120,7 @@ export default function PageHeader({
               />
             )}
 
-            {!extra && !subtitle && (
+            {!extra && !subtitle && !hideInsert && (
               <Button
                 type="primary"
                 icon={<PlusOutlined />}

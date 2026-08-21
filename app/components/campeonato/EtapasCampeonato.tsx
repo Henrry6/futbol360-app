@@ -5,6 +5,7 @@ import FormGrid from "../FormGrid";
 import Switch from "antd/lib/switch";
 import FormNumber from "../FormNumber";
 import { useEffect, useState } from "react";
+import { useConfirm } from "../utils/useConfirm";
 import { useShowError, useShowMessage } from "../utils/ShowError";
 import { DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import {
@@ -14,7 +15,6 @@ import {
   Empty,
   Form,
   Input,
-  Modal,
   Select,
   Spin,
   Typography,
@@ -42,6 +42,7 @@ export default function EtapasCampeonato({
   const [saving, setSaving] = useState<string | null>(null);
   const ShowError = useShowError();
   const ShowMessage = useShowMessage();
+  const confirm = useConfirm();
 
   const getStages = async () => {
     try {
@@ -100,12 +101,12 @@ export default function EtapasCampeonato({
   };
 
   const handleDelete = (stage: Stage) => {
-    Modal.confirm({
+    confirm({
       title: `¿Eliminar la etapa "${stage.name ?? "..."}"?`,
       content: "Esta acción no se puede deshacer.",
       okText: "Eliminar",
-      okType: "danger",
       cancelText: "Cancelar",
+      danger: true,
       onOk: async () => {
         try {
           const { data } = await api.get(`/rounds`, {
@@ -152,123 +153,124 @@ export default function EtapasCampeonato({
                 key: stage._id,
                 label: `${index + 1}. ${stage.name || `Etapa ${index + 1}`}`,
                 children: (
-                  <FormGrid>
-                    <Form.Item label="Nombre">
-                      <Input
-                        placeholder="Ej. Fase Regular, Semifinales, Final..."
-                        value={stage.name}
-                        onChange={(e) =>
-                          updateStage(index, { name: e.target.value })
-                        }
-                      />
-                    </Form.Item>
+                  <>
+                    <FormGrid>
+                      <Form.Item label="Nombre">
+                        <Input
+                          placeholder="Ej. Fase Regular, Semifinales, Final..."
+                          value={stage.name}
+                          onChange={(e) =>
+                            updateStage(index, { name: e.target.value })
+                          }
+                        />
+                      </Form.Item>
 
-                    <Form.Item label="Modo de competencia">
-                      <Select
-                        placeholder="Seleccione el formato de la etapa"
-                        value={stage.mode}
-                        onChange={(mode: Stage["mode"]) =>
-                          updateStage(index, { mode })
-                        }
-                        options={[
-                          {
-                            value: "round_robin",
-                            label: "Todos contra todos",
-                          },
-                          {
-                            value: "round_robin_double",
-                            label: "Todos contra todos (ida y vuelta)",
-                          },
-                          {
-                            value: "groups",
-                            label: "Fase de grupos",
-                          },
-                          {
-                            value: "knockout",
-                            label: "Eliminación directa",
-                          },
-                        ]}
-                      />
-                    </Form.Item>
+                      <Form.Item label="Modo de competencia">
+                        <Select
+                          placeholder="Seleccione el formato de la etapa"
+                          value={stage.mode}
+                          onChange={(mode: Stage["mode"]) =>
+                            updateStage(index, { mode })
+                          }
+                          options={[
+                            {
+                              value: "round_robin",
+                              label: "Todos contra todos",
+                            },
+                            {
+                              value: "round_robin_double",
+                              label: "Todos contra todos (ida y vuelta)",
+                            },
+                            {
+                              value: "groups",
+                              label: "Fase de grupos",
+                            },
+                            {
+                              value: "knockout",
+                              label: "Eliminación directa",
+                            },
+                          ]}
+                        />
+                      </Form.Item>
 
-                    <Form.Item label="Participantes">
-                      <FormNumber
-                        className="w-full"
-                        placeholder="Cantidad de equipos participantes"
-                        value={stage.participants}
-                        onChange={(value) =>
-                          updateStage(index, {
-                            participants: value as number,
-                          })
-                        }
-                      />
-                    </Form.Item>
-
-                    <Form.Item label="Clasifican">
-                      <FormNumber
-                        className="w-full"
-                        placeholder="Cantidad de equipos que avanzan"
-                        value={stage.qualifyTeams}
-                        onChange={(value) =>
-                          updateStage(index, {
-                            qualifyTeams: value as number,
-                          })
-                        }
-                      />
-                    </Form.Item>
-
-                    {stage.mode === "groups" && (
-                      <Form.Item label="Cantidad de grupos">
+                      <Form.Item label="Participantes">
                         <FormNumber
                           className="w-full"
-                          placeholder="Ej. 2, 4, 8..."
-                          value={stage.groups}
+                          placeholder="Cantidad de equipos participantes"
+                          value={stage.participants}
                           onChange={(value) =>
-                            updateStage(index, { groups: value as number })
+                            updateStage(index, {
+                              participants: value as number,
+                            })
                           }
                         />
                       </Form.Item>
-                    )}
 
-                    {stage.mode === "knockout" && (
-                      <Form.Item
-                        label="Partido por tercer lugar"
-                        valuePropName="checked"
-                      >
-                        <Switch
-                          checked={stage.thirdPlaceMatch}
-                          onChange={(checked) =>
-                            updateStage(index, { thirdPlaceMatch: checked })
+                      <Form.Item label="Clasifican">
+                        <FormNumber
+                          className="w-full"
+                          placeholder="Cantidad de equipos que avanzan"
+                          value={stage.qualifyTeams}
+                          onChange={(value) =>
+                            updateStage(index, {
+                              qualifyTeams: value as number,
+                            })
                           }
                         />
                       </Form.Item>
-                    )}
 
-                    <Form.Item label="Estado">
-                      <Select
-                        disabled
-                        value={stage.status}
-                        options={[
-                          {
-                            value: "pendiente",
-                            label: "Pendiente",
-                          },
-                          {
-                            value: "generada",
-                            label: "Generada",
-                          },
-                          {
-                            value: "activa",
-                            label: "Activa",
-                          },
-                          {
-                            value: "finalizada",
-                            label: "Finalizada",
-                          },
-                        ]}
-                      />
-                    </Form.Item>
+                      {stage.mode === "groups" && (
+                        <Form.Item label="Cantidad de grupos">
+                          <FormNumber
+                            className="w-full"
+                            placeholder="Ej. 2, 4, 8..."
+                            value={stage.groups}
+                            onChange={(value) =>
+                              updateStage(index, { groups: value as number })
+                            }
+                          />
+                        </Form.Item>
+                      )}
 
+                      {stage.mode === "knockout" && (
+                        <Form.Item
+                          label="Partido por tercer lugar"
+                          valuePropName="checked"
+                        >
+                          <Switch
+                            checked={stage.thirdPlaceMatch}
+                            onChange={(checked) =>
+                              updateStage(index, { thirdPlaceMatch: checked })
+                            }
+                          />
+                        </Form.Item>
+                      )}
+
+                      <Form.Item label="Estado">
+                        <Select
+                          disabled
+                          value={stage.status}
+                          options={[
+                            {
+                              value: "pendiente",
+                              label: "Pendiente",
+                            },
+                            {
+                              value: "generada",
+                              label: "Generada",
+                            },
+                            {
+                              value: "activa",
+                              label: "Activa",
+                            },
+                            {
+                              value: "finalizada",
+                              label: "Finalizada",
+                            },
+                          ]}
+                        />
+                      </Form.Item>
+                    </FormGrid>
                     <div className="md:col-span-2 flex justify-end gap-2 mt-6">
                       <Button
                         type="primary"
@@ -286,7 +288,7 @@ export default function EtapasCampeonato({
                         Eliminar etapa
                       </Button>
                     </div>
-                  </FormGrid>
+                  </>
                 ),
               }))}
             />

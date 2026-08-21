@@ -6,8 +6,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import TagButtons from "@/components/TagButtons";
-import { useShowError } from "@/components/utils/ShowError";
+import { BotonMovimientos } from "@/components/Movements";
 import ProgramarPartido from "@/components/campeonato/ProgamarPartido";
+import { useShowError, useShowMessage } from "@/components/utils/ShowError";
 import {
   Card,
   Collapse,
@@ -18,7 +19,7 @@ import {
   Spin,
   Tabs,
   Empty,
-  Tag,
+  Popconfirm,
 } from "antd";
 import {
   EyeOutlined,
@@ -27,26 +28,45 @@ import {
   RollbackOutlined,
   CheckCircleOutlined,
   TeamOutlined,
+  ThunderboltOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
-import { BotonMovimientos } from "@/components/Movements";
 
-const { Panel } = Collapse;
+const EnumsModos = [
+  {
+    value: "round_robin",
+    label: "Todos contra todos",
+  },
+  {
+    value: "round_robin_double",
+    label: "Todos contra todos (ida y vuelta)",
+  },
+  {
+    value: "groups",
+    label: "Fase de grupos",
+  },
+  {
+    value: "knockout",
+    label: "Eliminación directa",
+  },
+];
 
 export default function GestionCampeonato() {
   const [loading, setLoading] = useState(false);
   const [campeonato, setCampeonato] = useState<any>(null);
   const [activeStage, setActiveStage] = useState<string>();
-
-  // Cache de rounds por etapa: { [stageId]: Round[] }
+  const showMessage = useShowMessage();
   const [roundsByStage, setRoundsByStage] = useState<Record<string, any[]>>({});
   const [loadingRounds, setLoadingRounds] = useState(false);
-
   const [matchesByRound, setMatchesByRound] = useState<Record<string, any[]>>(
     {},
   );
   const [loadingMatches, setLoadingMatches] = useState<Record<string, boolean>>(
     {},
   );
+  const { id } = useParams();
+  const [generatingFixture, setGeneratingFixture] = useState(false);
+  const [deletingFixture, setDeletingFixture] = useState(false);
 
   const getMatchesByRound = async (roundId: string, force = false) => {
     if (!force && matchesByRound[roundId]) return;
@@ -68,14 +88,15 @@ export default function GestionCampeonato() {
   };
 
   const ShowError = useShowError();
-  const { id } = useParams();
 
   const getCampeonato = async () => {
     try {
       setLoading(true);
       const { data } = await api.get(`/championships/${id}`);
       setCampeonato(data);
-      const firstStage = data.stages.find((s: any) => s.status === "generada");
+      const firstStage = data.stages.find(
+        (s: any) => s.status === "generada" || s.status === "pendiente",
+      );
       if (firstStage) {
         setActiveStage(firstStage._id);
         getRoundsByStage(firstStage._id);
@@ -87,8 +108,8 @@ export default function GestionCampeonato() {
     }
   };
 
-  const getRoundsByStage = async (stageId: string) => {
-    if (roundsByStage[stageId]) return;
+  const getRoundsByStage = async (stageId: string, force = false) => {
+    if (!force && roundsByStage[stageId]) return;
     try {
       setLoadingRounds(true);
       const { data } = await api.get(`/rounds`, {
@@ -114,6 +135,37 @@ export default function GestionCampeonato() {
     getRoundsByStage(stageId);
   };
 
+  const handleGenerateFixture = async () => {
+    if (!activeStage) return;
+    try {
+      setGeneratingFixture(true);
+      await api.post(`/championships/${id}/generate-fixture/${activeStage}`);
+      showMessage("Fixture generado correctamente");
+      await getCampeonato();
+      await getRoundsByStage(activeStage, true);
+    } catch (error) {
+      ShowError(error);
+    } finally {
+      setGeneratingFixture(false);
+    }
+  };
+
+  const handleDeleteFixture = async () => {
+    if (!activeStage) return;
+    try {
+      setDeletingFixture(true);
+      await api.delete(`/championships/${id}/delete-fixture/${activeStage}`);
+      showMessage("Fixture eliminado correctamente");
+      setMatchesByRound({});
+      await getCampeonato();
+      await getRoundsByStage(activeStage, true);
+    } catch (error) {
+      ShowError(error);
+    } finally {
+      setDeletingFixture(false);
+    }
+  };
+
   const stages = campeonato?.stages ?? [];
   const currentStage = stages.find((s: any) => s._id === activeStage);
   const currentRounds = activeStage ? (roundsByStage[activeStage] ?? []) : [];
@@ -128,13 +180,54 @@ export default function GestionCampeonato() {
       <Spin spinning={loading}>
         <div style={{ width: "100%" }}>
           {currentStage && (
-            <Card title="Información de la etapa" className="mb-4">
+            <Card
+              title="Información de la etapa"
+              className="mb-4"
+              extra={
+                <Space>
+                  {currentStage.status === "pendiente" && (
+                    <Button
+                      type="primary"
+                      icon={<ThunderboltOutlined />}
+                      loading={generatingFixture}
+                      onClick={handleGenerateFixture}
+                    >
+                      Generar Fixture
+                    </Button>
+                  )}
+
+                  {currentStage.status !== "pendiente" && (
+                    <Popconfirm
+                      title="¿Eliminar el fixture de esta etapa?"
+                      description="Solo es posible si ningún partido tiene información registrada."
+                      okText="Sí, eliminar"
+                      cancelText="Cancelar"
+                      onConfirm={handleDeleteFixture}
+                    >
+                      <Button
+                        danger
+                        icon={<DeleteOutlined />}
+                        loading={deletingFixture}
+                      >
+                        Eliminar Fixture
+                      </Button>
+                    </Popconfirm>
+                  )}
+                </Space>
+              }
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
                 <div className="border rounded p-2">
                   Etapa actual: <strong>{currentStage.name}</strong>
                 </div>
                 <div className="border rounded p-2">
-                  Modo: <strong>{currentStage.mode}</strong>
+                  Modo:{" "}
+                  <strong>
+                    {
+                      EnumsModos.find((m) => m.value === currentStage.mode)
+                        ?.label
+                    }
+                  </strong>
                 </div>
                 <div className="border rounded p-2">
                   Estado: <TagButtons status={currentStage.status} />
