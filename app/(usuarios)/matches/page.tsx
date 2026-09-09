@@ -93,8 +93,8 @@ export default function EquiposPage() {
     <Spin spinning={index.loading}>
       <PageHeader
         resource={{
-          label: "Equipos",
-          href: "/teams",
+          label: "Mis Partidos",
+          href: "/matches",
         }}
         loading={index.loading}
         onSearch={index.setSearch}

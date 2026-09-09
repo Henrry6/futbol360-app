@@ -173,9 +173,11 @@ export default function GestionCampeonato() {
     <>
       <PageHeader
         resource={{
-          label: "Campeonatos / Calendario",
+          label: "Gestionar Campeonato",
           href: "/campeonatos",
         }}
+        onRefresh={() => getCampeonato()}
+        hideInsert
       />
       <Spin spinning={loading}>
         <div style={{ width: "100%" }}>

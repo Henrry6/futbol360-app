@@ -105,7 +105,7 @@ export default function PageHeader({
           )}
 
           <Space>
-            {!hideRefresh && (
+            {!hideRefresh && onRefresh && (
               <Button
                 loading={loading}
                 icon={<ReloadOutlined />}

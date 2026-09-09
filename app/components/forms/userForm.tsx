@@ -2,9 +2,9 @@ import api from "@/services/api";
 import { $rules } from "@/assets/utils";
 import { useEffect, useState } from "react";
 import { League } from "@/(admin)/leagues/page";
+import { useAuthStore } from "@/services/store";
 import { useShowError } from "../utils/ShowError";
 import { Checkbox, Form, Input, Select, Space } from "antd";
-import { useAuthStore } from "@/services/store";
 
 export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
   const [loading, setLoading] = useState(false);
@@ -31,12 +31,6 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
 
   const roles: string[] = Form.useWatch("roles", form) ?? [];
   const isOfficial = roles.includes("official");
-
-  useEffect(() => {
-    if (!isOfficial) {
-      form.setFieldValue("official", undefined);
-    }
-  }, [isOfficial]);
 
   useEffect(() => {
     if (user?.league) {
@@ -87,6 +81,11 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
             { value: "player", label: "Jugador" },
             { value: "official", label: "Oficial" },
           ].filter((role) => role.value !== "master" || !user?.league)}
+          onChange={(value: string[]) => {
+            if (!value.includes("official")) {
+              form.setFieldValue("official", undefined);
+            }
+          }}
         />
       </Form.Item>
 
