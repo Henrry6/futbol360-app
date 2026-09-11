@@ -8,6 +8,7 @@ import PageHeader from "@/components/PageHeader";
 import TagButtons from "@/components/TagButtons";
 import { BotonMovimientos } from "@/components/Movements";
 import ProgramarPartido from "@/components/campeonato/ProgamarPartido";
+import { TablaPosiciones } from "@/components/campeonato/TablaPosiciones";
 import { useShowError, useShowMessage } from "@/components/utils/ShowError";
 import {
   Card,
@@ -26,7 +27,6 @@ import {
   CaretRightOutlined,
   FormOutlined,
   RollbackOutlined,
-  CheckCircleOutlined,
   TeamOutlined,
   ThunderboltOutlined,
   DeleteOutlined,
@@ -203,6 +203,8 @@ export default function GestionCampeonato() {
   const stages = campeonato?.stages ?? [];
   const currentStage = stages.find((s: any) => s._id === activeStage);
   const currentRounds = activeStage ? (roundsByStage[activeStage] ?? []) : [];
+  console.log(matchesByRound, "CURENT", roundsByStage);
+
   return (
     <>
       <PageHeader
@@ -232,48 +234,55 @@ export default function GestionCampeonato() {
                     </Button>
                   )}
 
-                  {currentStage.status !== "pendiente" && (
-                    <Popconfirm
-                      title="¿Eliminar el fixture de esta etapa?"
-                      description="Solo es posible si ningún partido tiene información registrada."
-                      okText="Sí, eliminar"
-                      cancelText="Cancelar"
-                      onConfirm={handleDeleteFixture}
-                    >
-                      <Button
-                        danger
-                        icon={<DeleteOutlined />}
-                        loading={deletingFixture}
+                  {currentStage.status !== "pendiente" &&
+                    currentRounds.every((x) => x.status === "pendiente") && (
+                      <Popconfirm
+                        title="¿Eliminar el fixture de esta etapa?"
+                        description="Solo es posible si ningún partido tiene información registrada."
+                        okText="Sí, eliminar"
+                        cancelText="Cancelar"
+                        onConfirm={handleDeleteFixture}
                       >
-                        Eliminar Fixture
-                      </Button>
-                    </Popconfirm>
-                  )}
+                        <Button
+                          danger
+                          icon={<DeleteOutlined />}
+                          loading={deletingFixture}
+                        >
+                          Eliminar Fixture
+                        </Button>
+                      </Popconfirm>
+                    )}
                 </Space>
               }
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
-                <div className="border rounded p-2">
-                  Etapa actual: <strong>{currentStage.name}</strong>
+              <div className="grid grid-cols-1 sm:grid-cols-2  gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-2 items-start">
+                  <div className="border rounded p-4 text-sm leading-tight">
+                    Etapa actual: <strong>{currentStage.name}</strong>
+                  </div>
+                  <div className="border rounded p-4 text-sm leading-tight">
+                    Modo:{" "}
+                    <strong>
+                      {
+                        EnumsModos.find((m) => m.value === currentStage.mode)
+                          ?.label
+                      }
+                    </strong>
+                  </div>
+                  <div className="border rounded p-4 text-sm leading-tight">
+                    Estado: <TagButtons status={currentStage.status} />
+                  </div>
+                  <div className="border rounded p-4 text-sm leading-tight">
+                    Participantes: <strong>{currentStage.participants}</strong>
+                  </div>
+                  <div className="border rounded p-4 text-sm leading-tight">
+                    Clasifican: <strong>{currentStage.qualifyTeams}</strong>
+                  </div>
                 </div>
-                <div className="border rounded p-2">
-                  Modo:{" "}
-                  <strong>
-                    {
-                      EnumsModos.find((m) => m.value === currentStage.mode)
-                        ?.label
-                    }
-                  </strong>
-                </div>
-                <div className="border rounded p-2">
-                  Estado: <TagButtons status={currentStage.status} />
-                </div>
-                <div className="border rounded p-2">
-                  Participantes: <strong>{currentStage.participants}</strong>
-                </div>
-                <div className="border rounded p-2">
-                  Clasifican: <strong>{currentStage.qualifyTeams}</strong>
-                </div>
+                <TablaPosiciones
+                  championshipId={id as string}
+                  stageId={currentStage._id}
+                />
               </div>
             </Card>
           )}
