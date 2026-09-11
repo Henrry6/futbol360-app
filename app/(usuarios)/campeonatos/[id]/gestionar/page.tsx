@@ -435,7 +435,10 @@ export default function GestionCampeonato() {
                                               target="_blank"
                                               rel="noopener noreferrer"
                                             >
-                                              <Button icon={<FormOutlined />}>
+                                              <Button
+                                                icon={<FormOutlined />}
+                                                title="Abrir vocalía"
+                                              >
                                                 Vocalía
                                               </Button>
                                             </a>
@@ -453,9 +456,15 @@ export default function GestionCampeonato() {
 
                                         {(record.status === "finalizado" ||
                                           record.status === "suspendido") && (
-                                          <Button icon={<EyeOutlined />}>
-                                            Ver
-                                          </Button>
+                                          <a
+                                            href={`/campeonatos/${record.championship}/vocalia/${record.matchReport}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                          >
+                                            <Button icon={<EyeOutlined />}>
+                                              Ver
+                                            </Button>
+                                          </a>
                                         )}
                                         <BotonMovimientos
                                           movimientos={record._movements}
