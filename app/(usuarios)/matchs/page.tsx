@@ -94,7 +94,7 @@ export default function EquiposPage() {
       <PageHeader
         resource={{
           label: "Mis Partidos",
-          href: "/matches",
+          href: "/matchs",
         }}
         loading={index.loading}
         onSearch={index.setSearch}

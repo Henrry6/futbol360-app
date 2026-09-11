@@ -1,7 +1,11 @@
 "use client";
 
+import api from "@/services/api";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { GiSoccerBall, GiWhistle } from "react-icons/gi";
+import { useShowError } from "@/components/utils/ShowError";
+import { AutoCompleteFast } from "@/components/FastAutocomplete";
 import {
   Card,
   Tag,
@@ -13,7 +17,6 @@ import {
   InputNumber,
   Checkbox,
   Select,
-  Rate,
   Timeline,
   Modal,
   Avatar,
@@ -29,9 +32,6 @@ import {
   CheckCircleOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { GiSoccerBall, GiWhistle } from "react-icons/gi";
-import api from "@/services/api";
-import { useShowError } from "@/components/utils/ShowError";
 
 const EVENT_CONFIG: Record<
   string,
@@ -58,6 +58,7 @@ export default function VocaliaPage() {
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [form] = Form.useForm();
   const [eventForm] = Form.useForm();
+  const equipo = Form.useWatch("team", eventForm);
 
   const isLocked =
     vocalia?.status === "finalizada" || vocalia?.match?.status === "finalizado";
@@ -477,7 +478,12 @@ export default function VocaliaPage() {
                 name="minute"
                 rules={[{ required: true }]}
               >
-                <InputNumber style={{ width: "100%" }} min={0} max={130} />
+                <InputNumber
+                  style={{ width: "100%" }}
+                  min={0}
+                  max={130}
+                  placeholder="Ingrese el minuto"
+                />
               </Form.Item>
               <Form.Item
                 label="Tipo de evento"
@@ -485,6 +491,7 @@ export default function VocaliaPage() {
                 rules={[{ required: true }]}
               >
                 <Select
+                  placeholder="Seleccione un tipo de evento"
                   options={Object.entries(EVENT_CONFIG).map(([value, cfg]) => ({
                     value,
                     label: `${cfg.icon} ${cfg.label}`,
@@ -497,6 +504,7 @@ export default function VocaliaPage() {
                 rules={[{ required: true }]}
               >
                 <Select
+                  placeholder="Seleccione un equipo"
                   options={[
                     {
                       value: match.localTeam?._id,
@@ -509,11 +517,19 @@ export default function VocaliaPage() {
                   ]}
                 />
               </Form.Item>
-              <Form.Item label="Jugador" name="player">
-                <Select placeholder="Selecciona un jugador" options={[]} />
-              </Form.Item>
+              {equipo && (
+                <AutoCompleteFast
+                  required
+                  label="Jugador"
+                  name="player"
+                  placeholder="Seleccione un jugador"
+                  endpoint="/players"
+                  params={{ team: equipo }}
+                  optionLabel={(item: any) => `${item.names} - ${item.cedula}`}
+                />
+              )}
               <Form.Item label="Observaciones" name="observations">
-                <Input.TextArea rows={2} />
+                <Input.TextArea rows={2} placeholder="Observaciones" />
               </Form.Item>
             </Form>
           </Modal>

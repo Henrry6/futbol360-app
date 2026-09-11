@@ -52,10 +52,11 @@ const EnumsModos = [
 ];
 
 export default function GestionCampeonato() {
+  const showMessage = useShowMessage();
   const [loading, setLoading] = useState(false);
   const [campeonato, setCampeonato] = useState<any>(null);
+  const [activeRound, setActiveRound] = useState<string>();
   const [activeStage, setActiveStage] = useState<string>();
-  const showMessage = useShowMessage();
   const [roundsByStage, setRoundsByStage] = useState<Record<string, any[]>>({});
   const [loadingRounds, setLoadingRounds] = useState(false);
   const [matchesByRound, setMatchesByRound] = useState<Record<string, any[]>>(
@@ -95,7 +96,10 @@ export default function GestionCampeonato() {
       const { data } = await api.get(`/championships/${id}`);
       setCampeonato(data);
       const firstStage = data.stages.find(
-        (s: any) => s.status === "generada" || s.status === "pendiente",
+        (s: any) =>
+          s.status === "generada" ||
+          s.status === "pendiente" ||
+          s.status === "en_juego",
       );
       if (firstStage) {
         setActiveStage(firstStage._id);
@@ -163,6 +167,36 @@ export default function GestionCampeonato() {
       ShowError(error);
     } finally {
       setDeletingFixture(false);
+    }
+  };
+
+  const refreshStage = async () => {
+    if (!activeStage) return;
+    setActiveRound(undefined);
+    setMatchesByRound({});
+    await getCampeonato();
+    await getRoundsByStage(activeStage, true);
+  };
+
+  const handleStartMatch = async (record: any) => {
+    try {
+      const { data } = await api.post(`/matchs/${record._id}/start`);
+      const url = `/campeonatos/${record.championship}/vocalia/${data._id}`;
+      window.open(url, "_blank");
+      await refreshStage();
+
+      showMessage("Partido iniciado");
+    } catch (error) {
+      ShowError(error);
+    }
+  };
+  const handleRevertStart = async (record: any) => {
+    try {
+      await api.delete(`/matchs/${record._id}/revert-start`);
+      await refreshStage();
+      showMessage("Partido revertido");
+    } catch (error) {
+      ShowError(error);
     }
   };
 
@@ -257,9 +291,11 @@ export default function GestionCampeonato() {
                   <Spin spinning={loadingRounds && activeStage === stage._id}>
                     <Collapse
                       accordion
-                      defaultActiveKey={["0"]}
+                      activeKey={activeRound}
                       onChange={(key) => {
                         const roundId = Array.isArray(key) ? key[0] : key;
+                        setActiveRound(roundId);
+
                         if (roundId) getMatchesByRound(roundId);
                       }}
                       items={currentRounds.map((round: any) => ({
@@ -367,11 +403,6 @@ export default function GestionCampeonato() {
                                   width: 220,
                                   align: "center",
                                   render: (_, record: any) => {
-                                    const isScheduled =
-                                      record.date &&
-                                      record.hour &&
-                                      record.vocal;
-
                                     return (
                                       <Space>
                                         {record.status === "programado" && (
@@ -388,7 +419,9 @@ export default function GestionCampeonato() {
                                             <Button
                                               type="primary"
                                               icon={<CaretRightOutlined />}
-                                              disabled={!isScheduled}
+                                              onClick={() =>
+                                                handleStartMatch(record)
+                                              }
                                             >
                                               Iniciar
                                             </Button>
@@ -397,17 +430,24 @@ export default function GestionCampeonato() {
 
                                         {record.status === "en_juego" && (
                                           <>
-                                            <Button icon={<FormOutlined />}>
-                                              Vocalía
-                                            </Button>
+                                            <a
+                                              href={`/campeonatos/${record.championship}/vocalia/${record.matchReport}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                            >
+                                              <Button icon={<FormOutlined />}>
+                                                Vocalía
+                                              </Button>
+                                            </a>
                                             <Button
                                               danger
                                               icon={<RollbackOutlined />}
-                                            />
-                                            <Button
-                                              type="primary"
-                                              icon={<CheckCircleOutlined />}
-                                            />
+                                              onClick={() =>
+                                                handleRevertStart(record)
+                                              }
+                                            >
+                                              Revertir
+                                            </Button>
                                           </>
                                         )}
 

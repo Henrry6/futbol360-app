@@ -108,7 +108,7 @@ export const officialMenu = [
     label: "Inicio",
   },
   {
-    key: "/matches",
+    key: "/matchs",
     icon: <GiSoccerBall size={18} />,
     label: "Mis partidos",
   },
@@ -129,7 +129,7 @@ export const playerMenu = [
     label: "Mi equipo",
   },
   {
-    key: "/matches",
+    key: "/matchs",
     icon: <GiSoccerBall size={18} />,
     label: "Mis partidos",
   },
