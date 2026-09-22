@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import api from "@/services/api";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import useSWR, { useSWRConfig } from "swr";
 import PageHeader from "@/components/PageHeader";
 import TagButtons from "@/components/TagButtons";
 import { BotonMovimientos } from "@/components/Movements";
@@ -51,92 +52,229 @@ const EnumsModos = [
   },
 ];
 
+const getCampeonatoKey = (championshipId?: string) =>
+  championshipId ? `championship:${championshipId}` : null;
+
+const getRoundsKey = (championshipId?: string, stageId?: string) =>
+  championshipId && stageId ? `rounds:${championshipId}:${stageId}` : null;
+
+const getMatchesKey = (championshipId?: string, roundId?: string) =>
+  championshipId && roundId ? `matchs:${championshipId}:${roundId}` : null;
+
+interface RoundMatchesProps {
+  championshipId: string;
+  roundId: string;
+  onStartMatch: (record: any) => void;
+  onRevertStart: (record: any) => void;
+}
+
+function RoundMatches({
+  championshipId,
+  roundId,
+  onStartMatch,
+  onRevertStart,
+}: RoundMatchesProps) {
+  const {
+    data: matches = [],
+    isLoading,
+    mutate,
+  } = useSWR(getMatchesKey(championshipId, roundId), () =>
+    api
+      .get("/matchs", {
+        params: { championship: championshipId, round: roundId },
+      })
+      .then((res) => res.data.data),
+  );
+
+  return (
+    <Spin spinning={isLoading}>
+      <Table
+        rowKey="_id"
+        pagination={false}
+        locale={{ emptyText: "No existen partidos para esta jornada." }}
+        dataSource={matches}
+        columns={[
+          {
+            title: "Local",
+            render: (_, record: any) => (
+              <Space>
+                <Avatar src={record.localTeam?.logo} icon={<TeamOutlined />} />
+                {record.localTeam?.name}
+              </Space>
+            ),
+          },
+          {
+            title: "Marcador / Programación",
+            align: "center",
+            width: 140,
+            render: (_, record: any) => {
+              if (record.status !== "programado") {
+                return `${record.localGoals ?? 0} - ${record.visitorGoals ?? 0}`;
+              }
+
+              const isScheduled =
+                record.date && record.hour && record.vocal;
+
+              if (!isScheduled) {
+                return "vs";
+              }
+
+              return (
+                <Space
+                  orientation="vertical"
+                  size={0}
+                  style={{ lineHeight: 1.3 }}
+                >
+                  <span>{dayjs(record.date).format("DD/MM/YYYY")}</span>
+                  <span>{dayjs(record.hour).format("HH:mm")}</span>
+                  <span style={{ fontSize: 14, color: "#1042cc" }}>
+                    {record.vocal?.name ?? "—"}
+                  </span>
+                </Space>
+              );
+            },
+          },
+          {
+            title: "Visitante",
+            render: (_, record: any) => (
+              <Space>
+                <Avatar
+                  src={record.visitorTeam?.logo}
+                  icon={<TeamOutlined />}
+                />
+                {record.visitorTeam?.name}
+              </Space>
+            ),
+          },
+          {
+            title: "Estado",
+            width: 150,
+            align: "center",
+            render: (_, record: any) => (
+              <TagButtons status={record.status} />
+            ),
+          },
+          {
+            title: "",
+            width: 220,
+            align: "center",
+            render: (_, record: any) => {
+              return (
+                <Space>
+                  {record.status === "programado" && (
+                    <>
+                      <ProgramarPartido
+                        match={record}
+                        onSuccess={() => mutate()}
+                      />
+                      <Button
+                        type="primary"
+                        icon={<CaretRightOutlined />}
+                        onClick={() => onStartMatch(record)}
+                      >
+                        Iniciar
+                      </Button>
+                    </>
+                  )}
+
+                  {record.status === "en_juego" && (
+                    <>
+                      <a
+                        href={`/campeonatos/${record.championship}/vocalia/${record.matchReport}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button
+                          icon={<FormOutlined />}
+                          title="Abrir vocalía"
+                        >
+                          Vocalía
+                        </Button>
+                      </a>
+                      <Button
+                        danger
+                        icon={<RollbackOutlined />}
+                        onClick={() => onRevertStart(record)}
+                      >
+                        Revertir
+                      </Button>
+                    </>
+                  )}
+
+                  {(record.status === "finalizado" ||
+                    record.status === "suspendido") && (
+                    <a
+                      href={`/campeonatos/${record.championship}/vocalia/${record.matchReport}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button icon={<EyeOutlined />}>Ver</Button>
+                    </a>
+                  )}
+                  <BotonMovimientos movimientos={record._movements} />
+                </Space>
+              );
+            },
+          },
+        ]}
+      />
+    </Spin>
+  );
+}
+
 export default function GestionCampeonato() {
   const showMessage = useShowMessage();
-  const [loading, setLoading] = useState(false);
-  const [campeonato, setCampeonato] = useState<any>(null);
-  const [activeRound, setActiveRound] = useState<string>();
-  const [activeStage, setActiveStage] = useState<string>();
-  const [roundsByStage, setRoundsByStage] = useState<Record<string, any[]>>({});
-  const [loadingRounds, setLoadingRounds] = useState(false);
-  const [matchesByRound, setMatchesByRound] = useState<Record<string, any[]>>(
-    {},
-  );
-  const [loadingMatches, setLoadingMatches] = useState<Record<string, boolean>>(
-    {},
-  );
+  const ShowError = useShowError();
+  const { mutate: refreshKey } = useSWRConfig();
   const { id } = useParams();
+  const [activeStage, setActiveStage] = useState<string>();
+  const [activeRound, setActiveRound] = useState<string>();
   const [generatingFixture, setGeneratingFixture] = useState(false);
   const [deletingFixture, setDeletingFixture] = useState(false);
 
-  const getMatchesByRound = async (roundId: string, force = false) => {
-    if (!force && matchesByRound[roundId]) return;
-
-    try {
-      setLoadingMatches((prev) => ({ ...prev, [roundId]: true }));
-      const { data } = await api.get(`/matchs`, {
-        params: { championship: id, round: roundId },
-      });
-      setMatchesByRound((prev) => ({
-        ...prev,
-        [roundId]: data.data,
-      }));
-    } catch (error) {
-      ShowError(error);
-    } finally {
-      setLoadingMatches((prev) => ({ ...prev, [roundId]: false }));
-    }
-  };
-
-  const ShowError = useShowError();
-
-  const getCampeonato = async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.get(`/championships/${id}`);
-      setCampeonato(data);
-      const firstStage = data.stages.find(
-        (s: any) =>
-          s.status === "generada" ||
-          s.status === "pendiente" ||
-          s.status === "en_juego",
-      );
-      if (firstStage) {
-        setActiveStage(firstStage._id);
-        getRoundsByStage(firstStage._id);
-      }
-    } catch (error) {
-      ShowError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getRoundsByStage = async (stageId: string, force = false) => {
-    if (!force && roundsByStage[stageId]) return;
-    try {
-      setLoadingRounds(true);
-      const { data } = await api.get(`/rounds`, {
-        params: { championship: id, stage: stageId },
-      });
-      setRoundsByStage((prev) => ({
-        ...prev,
-        [stageId]: data.data.sort((a: any, b: any) => a.round - b.round),
-      }));
-    } catch (error) {
-      ShowError(error);
-    } finally {
-      setLoadingRounds(false);
-    }
-  };
+  const {
+    data: campeonato,
+    isLoading: loading,
+    mutate: mutateCampeonato,
+  } = useSWR(getCampeonatoKey(id as string), () =>
+    api.get(`/championships/${id}`).then((res) => res.data),
+  );
 
   useEffect(() => {
-    getCampeonato();
-  }, []);
+    if (activeStage || !campeonato?.stages?.length) return;
+    const firstStage = campeonato.stages.find(
+      (s: any) =>
+        s.status === "generada" ||
+        s.status === "pendiente" ||
+        s.status === "en_juego",
+    );
+    if (firstStage) setActiveStage(firstStage._id);
+  }, [campeonato, activeStage]);
+
+  const {
+    data: currentRounds = [],
+    isLoading: loadingRounds,
+    mutate: mutateRounds,
+  } = useSWR(getRoundsKey(id as string, activeStage), () =>
+    api
+      .get("/rounds", { params: { championship: id, stage: activeStage } })
+      .then((res) =>
+        res.data.data.sort((a: any, b: any) => a.round - b.round),
+      ),
+  );
+
+  const refreshAll = async () => {
+    setActiveRound(undefined);
+    await mutateCampeonato();
+    if (activeStage) await mutateRounds();
+    const prefix = `matchs:${id}:`;
+    await refreshKey((key: unknown) =>
+      typeof key === "string" && key.startsWith(prefix) ? true : false,
+    );
+  };
 
   const handleChangeStage = (stageId: string) => {
     setActiveStage(stageId);
-    getRoundsByStage(stageId);
   };
 
   const handleGenerateFixture = async () => {
@@ -145,8 +283,7 @@ export default function GestionCampeonato() {
       setGeneratingFixture(true);
       await api.post(`/championships/${id}/generate-fixture/${activeStage}`);
       showMessage("Fixture generado correctamente");
-      await getCampeonato();
-      await getRoundsByStage(activeStage, true);
+      await refreshAll();
     } catch (error) {
       ShowError(error);
     } finally {
@@ -160,9 +297,7 @@ export default function GestionCampeonato() {
       setDeletingFixture(true);
       await api.delete(`/championships/${id}/delete-fixture/${activeStage}`);
       showMessage("Fixture eliminado correctamente");
-      setMatchesByRound({});
-      await getCampeonato();
-      await getRoundsByStage(activeStage, true);
+      await refreshAll();
     } catch (error) {
       ShowError(error);
     } finally {
@@ -170,30 +305,22 @@ export default function GestionCampeonato() {
     }
   };
 
-  const refreshStage = async () => {
-    if (!activeStage) return;
-    setActiveRound(undefined);
-    setMatchesByRound({});
-    await getCampeonato();
-    await getRoundsByStage(activeStage, true);
-  };
-
   const handleStartMatch = async (record: any) => {
     try {
       const { data } = await api.post(`/matchs/${record._id}/start`);
       const url = `/campeonatos/${record.championship}/vocalia/${data._id}`;
       window.open(url, "_blank");
-      await refreshStage();
-
+      await refreshAll();
       showMessage("Partido iniciado");
     } catch (error) {
       ShowError(error);
     }
   };
+
   const handleRevertStart = async (record: any) => {
     try {
       await api.delete(`/matchs/${record._id}/revert-start`);
-      await refreshStage();
+      await refreshAll();
       showMessage("Partido revertido");
     } catch (error) {
       ShowError(error);
@@ -202,8 +329,6 @@ export default function GestionCampeonato() {
 
   const stages = campeonato?.stages ?? [];
   const currentStage = stages.find((s: any) => s._id === activeStage);
-  const currentRounds = activeStage ? (roundsByStage[activeStage] ?? []) : [];
-  console.log(matchesByRound, "CURENT", roundsByStage);
 
   return (
     <>
@@ -212,7 +337,7 @@ export default function GestionCampeonato() {
           label: "Gestionar Campeonato",
           href: "/campeonatos",
         }}
-        onRefresh={() => getCampeonato()}
+        onRefresh={() => mutateCampeonato()}
         hideInsert
       />
       <Spin spinning={loading}>
@@ -235,7 +360,7 @@ export default function GestionCampeonato() {
                   )}
 
                   {currentStage.status !== "pendiente" &&
-                    currentRounds.every((x) => x.status === "pendiente") && (
+                    currentRounds.every((x: any) => x.status === "pendiente") && (
                       <Popconfirm
                         title="¿Eliminar el fixture de esta etapa?"
                         description="Solo es posible si ningún partido tiene información registrada."
@@ -304,8 +429,6 @@ export default function GestionCampeonato() {
                       onChange={(key) => {
                         const roundId = Array.isArray(key) ? key[0] : key;
                         setActiveRound(roundId);
-
-                        if (roundId) getMatchesByRound(roundId);
                       }}
                       items={currentRounds.map((round: any) => ({
                         key: round._id,
@@ -321,170 +444,12 @@ export default function GestionCampeonato() {
                           </Space>
                         ),
                         children: (
-                          <Spin spinning={!!loadingMatches[round._id]}>
-                            <Table
-                              rowKey="_id"
-                              pagination={false}
-                              locale={{
-                                emptyText:
-                                  "No existen partidos para esta jornada.",
-                              }}
-                              dataSource={matchesByRound[round._id] ?? []}
-                              columns={[
-                                {
-                                  title: "Local",
-                                  render: (_, record: any) => (
-                                    <Space>
-                                      <Avatar
-                                        src={record.localTeam?.logo}
-                                        icon={<TeamOutlined />}
-                                      />
-                                      {record.localTeam?.name}
-                                    </Space>
-                                  ),
-                                },
-                                {
-                                  title: "Marcador / Programación",
-                                  align: "center",
-                                  width: 140,
-                                  render: (_, record: any) => {
-                                    if (record.status !== "programado") {
-                                      return `${record.localGoals ?? 0} - ${record.visitorGoals ?? 0}`;
-                                    }
-
-                                    const isScheduled =
-                                      record.date &&
-                                      record.hour &&
-                                      record.vocal;
-
-                                    if (!isScheduled) {
-                                      return "vs";
-                                    }
-
-                                    return (
-                                      <Space
-                                        orientation="vertical"
-                                        size={0}
-                                        style={{ lineHeight: 1.3 }}
-                                      >
-                                        <span>
-                                          {dayjs(record.date).format(
-                                            "DD/MM/YYYY",
-                                          )}
-                                        </span>
-                                        <span>
-                                          {dayjs(record.hour).format("HH:mm")}
-                                        </span>
-                                        <span
-                                          style={{
-                                            fontSize: 14,
-                                            color: "#1042cc",
-                                          }}
-                                        >
-                                          {record.vocal?.name ?? "—"}
-                                        </span>
-                                      </Space>
-                                    );
-                                  },
-                                },
-                                {
-                                  title: "Visitante",
-                                  render: (_, record: any) => (
-                                    <Space>
-                                      <Avatar
-                                        src={record.visitorTeam?.logo}
-                                        icon={<TeamOutlined />}
-                                      />
-                                      {record.visitorTeam?.name}
-                                    </Space>
-                                  ),
-                                },
-                                {
-                                  title: "Estado",
-                                  width: 150,
-                                  align: "center",
-                                  render: (_, record: any) => (
-                                    <TagButtons status={record.status} />
-                                  ),
-                                },
-                                {
-                                  title: "",
-                                  width: 220,
-                                  align: "center",
-                                  render: (_, record: any) => {
-                                    return (
-                                      <Space>
-                                        {record.status === "programado" && (
-                                          <>
-                                            <ProgramarPartido
-                                              match={record}
-                                              onSuccess={() => {
-                                                getMatchesByRound(
-                                                  round._id,
-                                                  true,
-                                                );
-                                              }}
-                                            />
-                                            <Button
-                                              type="primary"
-                                              icon={<CaretRightOutlined />}
-                                              onClick={() =>
-                                                handleStartMatch(record)
-                                              }
-                                            >
-                                              Iniciar
-                                            </Button>
-                                          </>
-                                        )}
-
-                                        {record.status === "en_juego" && (
-                                          <>
-                                            <a
-                                              href={`/campeonatos/${record.championship}/vocalia/${record.matchReport}`}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                            >
-                                              <Button
-                                                icon={<FormOutlined />}
-                                                title="Abrir vocalía"
-                                              >
-                                                Vocalía
-                                              </Button>
-                                            </a>
-                                            <Button
-                                              danger
-                                              icon={<RollbackOutlined />}
-                                              onClick={() =>
-                                                handleRevertStart(record)
-                                              }
-                                            >
-                                              Revertir
-                                            </Button>
-                                          </>
-                                        )}
-
-                                        {(record.status === "finalizado" ||
-                                          record.status === "suspendido") && (
-                                          <a
-                                            href={`/campeonatos/${record.championship}/vocalia/${record.matchReport}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                          >
-                                            <Button icon={<EyeOutlined />}>
-                                              Ver
-                                            </Button>
-                                          </a>
-                                        )}
-                                        <BotonMovimientos
-                                          movimientos={record._movements}
-                                        />
-                                      </Space>
-                                    );
-                                  },
-                                },
-                              ]}
-                            />
-                          </Spin>
+                          <RoundMatches
+                            championshipId={id as string}
+                            roundId={round._id}
+                            onStartMatch={handleStartMatch}
+                            onRevertStart={handleRevertStart}
+                          />
                         ),
                       }))}
                     />

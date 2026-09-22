@@ -243,8 +243,18 @@ export default function VocaliaPage() {
     eventForm.resetFields();
     if (isEditing) {
       eventForm.setFieldsValue(event);
-    } else if (presetTeam) {
-      eventForm.setFieldsValue({ team: presetTeam });
+    } else {
+      const minutesSinceStart = vocalia?.startTime
+        ? Math.max(
+            0,
+            Math.floor(dayjs().diff(dayjs(vocalia.startTime), "minute")),
+          )
+        : 0;
+      eventForm.setFieldsValue({
+        minute: Math.min(130, minutesSinceStart),
+        type: "gol",
+        ...(presetTeam ? { team: presetTeam } : {}),
+      });
     }
     setEventModalOpen(true);
   };

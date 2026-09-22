@@ -1,9 +1,9 @@
 // components/TablaPosiciones.tsx
 "use client";
 
-import { useEffect, useState } from "react";
 import { Table, Tag, Empty, Spin, Tooltip, Typography } from "antd";
 import api from "@/services/api";
+import useSWR from "swr";
 import { useShowError } from "@/components/utils/ShowError";
 
 export interface StandingRow {
@@ -41,27 +41,22 @@ export function TablaPosiciones({
   size = "small",
 }: TablaPosicionesProps) {
   const ShowError = useShowError();
-  const [data, setData] = useState<StandingRow[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const load = async () => {
-    try {
-      setLoading(true);
-      const { data } = await api.get(
-        `/championships/${championshipId}/table-positions`,
-        { params: stageId ? { stageId } : {} },
-      );
-      setData(data || []);
-    } catch (error) {
-      ShowError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (championshipId) load();
-  }, [championshipId, stageId]);
+  const { data = [], isLoading } = useSWR(
+    championshipId
+      ? `table-positions:${championshipId}:${stageId ?? "all"}`
+      : null,
+    () =>
+      api
+        .get(`/championships/${championshipId}/table-positions`, {
+          params: stageId ? { stageId } : {},
+        })
+        .then((res) => res.data as StandingRow[])
+        .catch((error) => {
+          ShowError(error);
+          throw error;
+        }),
+  );
 
   const columns = [
     {
@@ -168,12 +163,12 @@ export function TablaPosiciones({
     },
   ];
 
-  if (!loading && data.length === 0) {
+  if (!isLoading && data.length === 0) {
     return <Empty description="Sin datos de posiciones" />;
   }
 
   return (
-    <Spin spinning={loading}>
+    <Spin spinning={isLoading}>
       <Typography.Title level={4}>Tabla de posiciones</Typography.Title>
       <Table
         rowKey="team"

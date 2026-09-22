@@ -5,10 +5,15 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/services/store";
 import { Button, Card, Form, Input } from "antd";
 import { useShowError } from "@/components/utils/ShowError";
+import { useEffect } from "react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const showError = useShowError();
+
+  useEffect(() => {
+    document.title = "ADMIN - Futbol 360";
+  }, []);
 
   async function onFinish(values: { username: string; password: string }) {
     try {

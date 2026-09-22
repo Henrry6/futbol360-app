@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { Breadcrumb, Button, Input, Space, Typography } from "antd";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -55,6 +55,12 @@ export default function PageHeader({
       ? `Editar ${resource.singular}`
       : `Crear ${resource.singular}`
     : undefined;
+
+  useEffect(() => {
+    document.title = subtitle
+      ? `${resource.label} - ${subtitle}`
+      : resource.label;
+  }, [resource.label, subtitle]);
 
   const breadcrumbsList = [
     {

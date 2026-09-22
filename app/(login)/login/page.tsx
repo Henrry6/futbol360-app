@@ -5,10 +5,15 @@ import { login } from "@/services/auth";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/services/store";
 import { useShowError } from "@/components/utils/ShowError";
+import { useEffect } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
   const showError = useShowError();
+
+  useEffect(() => {
+    document.title = "Futbol 360";
+  }, []);
 
   async function onFinish(values: {
     username: string;
@@ -29,62 +34,63 @@ export default function LoginPage() {
   }
 
   return (
-    <Card
-      className="w-full max-w-md rounded-4x"
-      style={{ backgroundColor: "black" }}
-    >
-      <div className="mb-8 text-center">
-        <div className="mb-3 text-5xl">⚽</div>
+    <>
+      <Card
+        className="w-full max-w-md rounded-4x"
+        style={{ backgroundColor: "black" }}
+      >
+        <div className="mb-8 text-center">
+          <div className="mb-3 text-5xl">⚽</div>
 
-        <h1 className="text-3xl font-bold text-white">Futbol 360</h1>
+          <h1 className="text-3xl font-bold text-white">Futbol 360</h1>
 
-        <p className="mt-2 text-sm text-gray-400">
-          Gestión profesional de ligas y equipos
-        </p>
-      </div>
+          <p className="mt-2 text-sm text-gray-400">
+            Gestión profesional de ligas y equipos
+          </p>
+        </div>
 
-      <Form layout="vertical" onFinish={onFinish}>
-        <Form.Item
-          label={<span className="text-white">Código de liga</span>}
-          name="code"
-          rules={[{ required: true }]}
-        >
-          <Input
+        <Form layout="vertical" onFinish={onFinish}>
+          <Form.Item
+            label={<span className="text-white">Código de liga</span>}
+            name="code"
+            rules={[{ required: true }]}
+          >
+            <Input
+              size="large"
+              placeholder="Ingrese el código de liga"
+              className="!bg-green-100 !text-black !border-zinc-700"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={<span className="text-gray-300">Usuario</span>}
+            name="username"
+            rules={[{ required: true }]}
+          >
+            <Input
+              size="large"
+              placeholder="Ingrese su usuario"
+              className="!bg-green-100 !text-black !border-zinc-700"
+            />
+          </Form.Item>
+
+          <Form.Item
+            label={<span className="text-gray-300">Contraseña</span>}
+            name="password"
+            rules={[{ required: true }]}
+          >
+            <Input.Password
+              size="large"
+              placeholder="Ingrese su contraseña"
+              className="!bg-green-100 !text-black !border-zinc-700"
+            />
+          </Form.Item>
+
+          <Button
+            htmlType="submit"
+            block
             size="large"
-            placeholder="Ingrese el código de liga"
-            className="!bg-green-100 !text-black !border-zinc-700"
-          />
-        </Form.Item>
-
-        <Form.Item
-          label={<span className="text-gray-300">Usuario</span>}
-          name="username"
-          rules={[{ required: true }]}
-        >
-          <Input
-            size="large"
-            placeholder="Ingrese su usuario"
-            className="!bg-green-100 !text-black !border-zinc-700"
-          />
-        </Form.Item>
-
-        <Form.Item
-          label={<span className="text-gray-300">Contraseña</span>}
-          name="password"
-          rules={[{ required: true }]}
-        >
-          <Input.Password
-            size="large"
-            placeholder="Ingrese su contraseña"
-            className="!bg-green-100 !text-black !border-zinc-700"
-          />
-        </Form.Item>
-
-        <Button
-          htmlType="submit"
-          block
-          size="large"
-          className="
+            className="
                 !h-12
                 !bg-zinc-600
                 hover:!bg-zinc-500
@@ -93,11 +99,11 @@ export default function LoginPage() {
                 !font-semibold
                 !rounded-lg
               "
-        >
-          Ingresar
-        </Button>
-      </Form>
-    </Card>
-    // </div>
+          >
+            Ingresar
+          </Button>
+        </Form>
+      </Card>
+    </>
   );
 }

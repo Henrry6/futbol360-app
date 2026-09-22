@@ -31,7 +31,7 @@ export const dataStatus: StatusItem[] = [
   { id: "suspendido", description: "Suspendido", color: "red" },
   //Etapas
   { id: "generada", description: "Generada", color: "purple" },
-  { id: "pendiente", description: "Pendiente", color: "orange" },
+  { id: "pendiente", description: "Pendiente", color: "red" },
   { id: "finalizada", description: "Finalizada", color: "gold" },
   // Delete
   { id: "anulado", description: "Anulado", color: "red" },
