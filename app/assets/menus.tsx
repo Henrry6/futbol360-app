@@ -104,10 +104,6 @@ export const directivoMenu = [
 ];
 export const officialMenu = [
   {
-    key: "/dashboard",
-    label: "Inicio",
-  },
-  {
     key: "/matchs",
     icon: <GiSoccerBall size={18} />,
     label: "Mis partidos",

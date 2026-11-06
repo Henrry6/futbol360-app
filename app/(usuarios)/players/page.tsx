@@ -5,8 +5,10 @@ import $filtros from "@/assets/utils";
 import { Movement } from "@/types/global";
 import PageHeader from "@/components/PageHeader";
 import TagButtons from "@/components/TagButtons";
+import { cloudinaryUrl } from "@/libs/cloudinary";
 import { useVistaIndex } from "@/assets/vistaIndex";
 import DeleteButton from "@/components/DeleteButton";
+import ImageUploader from "@/components/ImagenUploader";
 import { usePathname, useRouter } from "next/navigation";
 import { EditOutlined, UserOutlined } from "@ant-design/icons";
 import { Avatar, Button, Descriptions, Space, Spin, Table } from "antd";
@@ -66,20 +68,12 @@ export default function PlayersPage() {
           expandable={{
             expandedRowRender: (record) => (
               <div className="grid md:grid-cols-3 gap-8">
-                <div className="flex justify-center">
-                  {record.photo ? (
-                    // <Image
-                    //   src={record.photo}
-                    //   width={180}
-                    //   preview
-                    //   className="rounded-lg"
-                    // />
-                    <>Foto</>
-                  ) : (
-                    <Avatar size={180} icon={<UserOutlined />} />
-                  )}
-                </div>
-
+                <ImageUploader
+                  endpoint="/players"
+                  id={record._id}
+                  value={record.photo}
+                  onChange={refresh}
+                />
                 <div className="md:col-span-2">
                   <Descriptions
                     title="Información del jugador"
@@ -134,7 +128,11 @@ export default function PlayersPage() {
               align: "center",
               render: (photo) =>
                 photo ? (
-                  <Avatar src={photo} size={40} />
+                  <Avatar
+                    src={cloudinaryUrl(photo, 360, "face")}
+                    size={60}
+                    icon={<UserOutlined />}
+                  />
                 ) : (
                   <Avatar size={40}>
                     <UserOutlined />

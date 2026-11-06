@@ -3,7 +3,15 @@ import api from "@/services/api";
 import { useState } from "react";
 import { EditOutlined } from "@ant-design/icons";
 import { useShowError } from "@/components/utils/ShowError";
-import { Button, DatePicker, Form, Modal, Select, TimePicker } from "antd";
+import {
+  Alert,
+  Button,
+  DatePicker,
+  Form,
+  Modal,
+  Select,
+  TimePicker,
+} from "antd";
 
 interface ProgramarPartidoProps {
   match: any;
@@ -92,6 +100,11 @@ export default function ProgramarPartido({
         okText="Guardar"
         cancelText="Cancelar"
       >
+        <Alert
+          type="info"
+          title="Para poder iniciar el partido debe tener registrado la fecha, hora y vocal"
+          showIcon
+        />
         <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item
             label="Fecha"
@@ -101,11 +114,19 @@ export default function ProgramarPartido({
             <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
           </Form.Item>
 
-          <Form.Item label="Hora" name="hour">
+          <Form.Item
+            label="Hora"
+            name="hour"
+            rules={[{ required: true, message: "Selecciona la hora" }]}
+          >
             <TimePicker style={{ width: "100%" }} format="HH:mm" />
           </Form.Item>
 
-          <Form.Item label="Vocal" name="vocal">
+          <Form.Item
+            label="Vocal"
+            name="vocal"
+            rules={[{ required: true, message: "Selecciona un vocal" }]}
+          >
             <Select
               loading={loadingOfficials}
               allowClear

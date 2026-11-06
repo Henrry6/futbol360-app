@@ -1,10 +1,9 @@
 // components/TablaPosiciones.tsx
 "use client";
 
-import { Table, Tag, Empty, Spin, Tooltip, Typography } from "antd";
-import api from "@/services/api";
 import useSWR from "swr";
-import { useShowError } from "@/components/utils/ShowError";
+import api from "@/services/api";
+import { Table, Tag, Empty, Spin, Tooltip, Typography } from "antd";
 
 export interface StandingRow {
   team: string;
@@ -40,8 +39,6 @@ export function TablaPosiciones({
   highlightTeams = [],
   size = "small",
 }: TablaPosicionesProps) {
-  const ShowError = useShowError();
-
   const { data = [], isLoading } = useSWR(
     championshipId
       ? `table-positions:${championshipId}:${stageId ?? "all"}`
@@ -51,11 +48,7 @@ export function TablaPosiciones({
         .get(`/championships/${championshipId}/table-positions`, {
           params: stageId ? { stageId } : {},
         })
-        .then((res) => res.data as StandingRow[])
-        .catch((error) => {
-          ShowError(error);
-          throw error;
-        }),
+        .then((res) => res.data as StandingRow[]),
   );
 
   const columns = [

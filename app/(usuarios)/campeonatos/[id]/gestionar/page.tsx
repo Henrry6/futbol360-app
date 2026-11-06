@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
 import PageHeader from "@/components/PageHeader";
+import { cloudinaryUrl } from "@/libs/cloudinary";
 import TagButtons from "@/components/TagButtons";
 import { BotonMovimientos } from "@/components/Movements";
 import ProgramarPartido from "@/components/campeonato/ProgamarPartido";
@@ -98,7 +99,11 @@ function RoundMatches({
             title: "Local",
             render: (_, record: any) => (
               <Space>
-                <Avatar src={record.localTeam?.logo} icon={<TeamOutlined />} />
+                <Avatar
+                  src={cloudinaryUrl(record.localTeam?.logo, 100, "pad")}
+                  size={60}
+                  icon={<TeamOutlined />}
+                />
                 {record.localTeam?.name}
               </Space>
             ),
@@ -112,8 +117,7 @@ function RoundMatches({
                 return `${record.localGoals ?? 0} - ${record.visitorGoals ?? 0}`;
               }
 
-              const isScheduled =
-                record.date && record.hour && record.vocal;
+              const isScheduled = record.date && record.hour && record.vocal;
 
               if (!isScheduled) {
                 return "vs";
@@ -126,9 +130,11 @@ function RoundMatches({
                   style={{ lineHeight: 1.3 }}
                 >
                   <span>{dayjs(record.date).format("DD/MM/YYYY")}</span>
-                  <span>{dayjs(record.hour).format("HH:mm")}</span>
+                  <span style={{ color: "green" }}>
+                    {dayjs(record.hour).format("HH:mm A")}
+                  </span>
                   <span style={{ fontSize: 14, color: "#1042cc" }}>
-                    {record.vocal?.name ?? "—"}
+                    Vocal: {record.vocal?.name ?? "—"}
                   </span>
                 </Space>
               );
@@ -139,7 +145,8 @@ function RoundMatches({
             render: (_, record: any) => (
               <Space>
                 <Avatar
-                  src={record.visitorTeam?.logo}
+                  src={cloudinaryUrl(record.visitorTeam?.logo, 100, "pad")}
+                  size={60}
                   icon={<TeamOutlined />}
                 />
                 {record.visitorTeam?.name}
@@ -150,9 +157,7 @@ function RoundMatches({
             title: "Estado",
             width: 150,
             align: "center",
-            render: (_, record: any) => (
-              <TagButtons status={record.status} />
-            ),
+            render: (_, record: any) => <TagButtons status={record.status} />,
           },
           {
             title: "",
@@ -162,11 +167,15 @@ function RoundMatches({
               return (
                 <Space>
                   {record.status === "programado" && (
-                    <>
-                      <ProgramarPartido
-                        match={record}
-                        onSuccess={() => mutate()}
-                      />
+                    <ProgramarPartido
+                      match={record}
+                      onSuccess={() => mutate()}
+                    />
+                  )}
+                  {record.date &&
+                    record.hour &&
+                    record.vocal &&
+                    record.status === "programado" && (
                       <Button
                         type="primary"
                         icon={<CaretRightOutlined />}
@@ -174,8 +183,7 @@ function RoundMatches({
                       >
                         Iniciar
                       </Button>
-                    </>
-                  )}
+                    )}
 
                   {record.status === "en_juego" && (
                     <>
@@ -184,10 +192,7 @@ function RoundMatches({
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <Button
-                          icon={<FormOutlined />}
-                          title="Abrir vocalía"
-                        >
+                        <Button icon={<FormOutlined />} title="Abrir vocalía">
                           Vocalía
                         </Button>
                       </a>
@@ -258,9 +263,7 @@ export default function GestionCampeonato() {
   } = useSWR(getRoundsKey(id as string, activeStage), () =>
     api
       .get("/rounds", { params: { championship: id, stage: activeStage } })
-      .then((res) =>
-        res.data.data.sort((a: any, b: any) => a.round - b.round),
-      ),
+      .then((res) => res.data.data.sort((a: any, b: any) => a.round - b.round)),
   );
 
   const refreshAll = async () => {
@@ -360,7 +363,9 @@ export default function GestionCampeonato() {
                   )}
 
                   {currentStage.status !== "pendiente" &&
-                    currentRounds.every((x: any) => x.status === "pendiente") && (
+                    currentRounds.every(
+                      (x: any) => x.status === "pendiente",
+                    ) && (
                       <Popconfirm
                         title="¿Eliminar el fixture de esta etapa?"
                         description="Solo es posible si ningún partido tiene información registrada."

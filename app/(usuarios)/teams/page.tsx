@@ -4,11 +4,13 @@ import { Dayjs } from "dayjs";
 import $filtros from "@/assets/utils";
 import { Movement } from "@/types/global";
 import PageHeader from "@/components/PageHeader";
-import { EditOutlined, TeamOutlined } from "@ant-design/icons";
 import TagButtons from "@/components/TagButtons";
+import { cloudinaryUrl } from "@/libs/cloudinary";
 import { useVistaIndex } from "@/assets/vistaIndex";
 import DeleteButton from "@/components/DeleteButton";
 import { usePathname, useRouter } from "next/navigation";
+import ImageUploader from "@/components/ImagenUploader";
+import { EditOutlined, TeamOutlined } from "@ant-design/icons";
 import {
   Avatar,
   Button,
@@ -64,21 +66,13 @@ export default function EquiposPage() {
         expandable={{
           expandedRowRender: (record) => (
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="flex justify-center">
-                {record.logo ? (
-                  <>
-                    logoo
-                    {/* // <Image
-                    //   src={record.logo}
-                    //   width={180}
-                    //   preview
-                    //   className="rounded-lg"
-                    // /> */}
-                  </>
-                ) : (
-                  <Avatar size={180} icon={<TeamOutlined />} />
-                )}
-              </div>
+              <ImageUploader
+                endpoint="/teams"
+                id={record._id}
+                value={record.logo}
+                onChange={refresh}
+                crop="pad"
+              />
 
               <div className="md:col-span-2">
                 <Descriptions
@@ -137,9 +131,13 @@ export default function EquiposPage() {
             dataIndex: "logo",
             width: 70,
             align: "center",
-            render: (logo) =>
-              logo ? (
-                <Avatar src={logo} size={40} />
+            render: (photo) =>
+              photo ? (
+                <Avatar
+                  src={cloudinaryUrl(photo, 100, "pad")}
+                  size={60}
+                  icon={<TeamOutlined />}
+                />
               ) : (
                 <Avatar size={40}>
                   <TeamOutlined />
