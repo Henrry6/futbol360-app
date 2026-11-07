@@ -5,7 +5,9 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GiWhistle } from "react-icons/gi";
 import { useRouter } from "next/navigation";
-import { AutoCompleteFast } from "@/components/FastAutocomplete";
+import { cloudinaryUrl } from "@/libs/cloudinary";
+import { BotonMovimientos } from "@/components/Movements";
+import { ContadorMinutos } from "@/components/campeonato/ContadorMinutos";
 import { useShowError, useShowMessage } from "@/components/utils/ShowError";
 import {
   Card,
@@ -37,16 +39,12 @@ import {
   StopOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { ContadorMinutos } from "@/components/campeonato/ContadorMinutos";
-import { BotonMovimientos } from "@/components/Movements";
 
 const EVENT_CONFIG: Record<
   string,
   { label: string; color: string; icon: string }
 > = {
   gol: { label: "Gol", color: "#16a34a", icon: "⚽" },
-  gol_penal: { label: "Gol de penal", color: "#16a34a", icon: "⚽" },
-  autogol: { label: "Autogol", color: "#dc2626", icon: "⚽" },
   penal_fallado: { label: "Penal fallado", color: "#94a3b8", icon: "❌" },
   tarjeta_amarilla: { label: "Amarilla", color: "#eab308", icon: "🟨" },
   tarjeta_roja: { label: "Roja", color: "#dc2626", icon: "🟥" },
@@ -54,6 +52,8 @@ const EVENT_CONFIG: Record<
 };
 
 type Side = "local" | "visitor";
+
+const idOf = (v: any) => v?._id ?? v;
 
 export default function VocaliaPage() {
   const { vocaliaId } = useParams<{ vocaliaId: string }>();
@@ -77,6 +77,7 @@ export default function VocaliaPage() {
   const [reportForm] = Form.useForm();
   const [eventForm] = Form.useForm();
   const equipo = Form.useWatch("team", eventForm);
+  const tipo = Form.useWatch("type", eventForm);
 
   // modal de eventos
   const [eventModalOpen, setEventModalOpen] = useState(false);
@@ -88,7 +89,7 @@ export default function VocaliaPage() {
   const [loadingPlayers, setLoadingPlayers] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
-  // nuevo estado: cache de jugadores por equipo
+  // cache de jugadores por equipo
   const [teamPlayers, setTeamPlayers] = useState<Record<string, any[]>>({});
 
   const finishReport = async (values: {
@@ -118,7 +119,9 @@ export default function VocaliaPage() {
   const ensureTeamPlayers = async (teamId: string) => {
     if (!teamId || teamPlayers[teamId]) return teamPlayers[teamId] ?? [];
     try {
-      const { data } = await api.get(`/players`, { params: { team: teamId } });
+      const { data } = await api.get(`/players`, {
+        params: { team: teamId, $getAllFields: true },
+      });
       const list = (data.data || data || []).sort(
         (a: any, b: any) => a.jerseyNumber - b.jerseyNumber,
       );
@@ -209,9 +212,7 @@ export default function VocaliaPage() {
   const openPlayersModal = async (side: Side) => {
     const teamId = side === "local" ? localTeamId : visitorTeamId;
     setPlayersModalSide(side);
-    setSelectedPlayers(
-      (vocalia?.[side]?.players || []).map((p: any) => p?._id ?? p),
-    );
+    setSelectedPlayers((vocalia?.[side]?.players || []).map(idOf));
     setPlayersModalOpen(true);
     setLoadingPlayers(true);
     await ensureTeamPlayers(teamId);
@@ -242,7 +243,13 @@ export default function VocaliaPage() {
     setEditingEvent(isEditing ? event : null);
     eventForm.resetFields();
     if (isEditing) {
-      eventForm.setFieldsValue(event);
+      eventForm.setFieldsValue({
+        ...event,
+        team: idOf(event.team),
+        player: idOf(event.player),
+        playerIn: idOf(event.playerIn),
+        playerOut: idOf(event.playerOut),
+      });
     } else {
       const minutesSinceStart = vocalia?.startTime
         ? Math.max(
@@ -261,11 +268,17 @@ export default function VocaliaPage() {
 
   const handleSaveEvent = async (values: any) => {
     try {
+      // evita enviar campos que no corresponden al tipo
+      const payload =
+        values.type === "cambio"
+          ? { ...values, player: undefined }
+          : { ...values, playerIn: undefined, playerOut: undefined };
+
       if (editingEvent) {
-        await api.put(`/matchs-events/${editingEvent._id}`, values);
+        await api.put(`/matchs-events/${editingEvent._id}`, payload);
       } else {
         await api.post(`/matchs-events`, {
-          ...values,
+          ...payload,
           match: vocalia.match?._id ?? vocalia.match,
           championship: vocalia.championship,
           stage: vocalia.stage,
@@ -319,30 +332,69 @@ export default function VocaliaPage() {
 
   const localTeamId = match.localTeam?._id ?? match.localTeam;
   const visitorTeamId = match.visitorTeam?._id ?? match.visitorTeam;
-  const localGoals = events.filter(
-    (e) =>
-      (e.type === "gol" || e.type === "gol_penal") && e.team === localTeamId,
-  ).length;
-  const visitorGoals = events.filter(
-    (e) =>
-      (e.type === "gol" || e.type === "gol_penal") && e.team === visitorTeamId,
-  ).length;
+
+  // Marcador calculado por la API (considera autogoles y penales)
+  const localGoals = match.localGoals ?? 0;
+  const visitorGoals = match.visitorGoals ?? 0;
+
+  const findPlayer = (teamId: string, id: any) =>
+    id
+      ? (teamPlayers[teamId] || []).find((p: any) => p._id === idOf(id))
+      : null;
+
+  const PlayerChip = ({ p, arrow }: { p: any; arrow?: "in" | "out" }) => (
+    <div className="flex items-center gap-2">
+      {arrow && (
+        <span
+          className={`w-4 text-center font-bold ${
+            arrow === "in" ? "text-green-600" : "text-red-500"
+          }`}
+        >
+          {arrow === "in" ? "↑" : "↓"}
+        </span>
+      )}
+      <div className="flex items-center gap-2 rounded-full bg-gray-100 pr-3">
+        <Avatar
+          src={cloudinaryUrl(p.photo, 70, "face")}
+          size={32}
+          icon={<UserOutlined />}
+        />
+        <span>
+          {p.names} {p.lastName}{" "}
+          <span className="text-gray-500">#{p.jerseyNumber}</span>
+        </span>
+      </div>
+    </div>
+  );
+
+  // Jugadores convocados del equipo del evento (para los selects del modal)
+  const playerOptions = (() => {
+    if (!equipo) return [];
+    const side: Side = equipo === localTeamId ? "local" : "visitor";
+    const registeredIds: string[] = (vocalia?.[side]?.players || []).map(idOf);
+    return registeredIds
+      .map((id) => findPlayer(equipo, id))
+      .filter(Boolean)
+      .sort((a: any, b: any) => a.jerseyNumber - b.jerseyNumber)
+      .map((p: any) => ({
+        value: p._id,
+        label: `${p.names} ${p.lastName} - #${p.jerseyNumber}`,
+      }));
+  })();
 
   const renderTeamColumn = (side: Side) => {
     const teamId = side === "local" ? localTeamId : visitorTeamId;
     const teamData = side === "local" ? match.localTeam : match.visitorTeam;
     const form = side === "local" ? localForm : visitorForm;
 
-    const registeredIds: string[] = (vocalia?.[side]?.players || []).map(
-      (p: any) => p?._id ?? p,
-    );
+    const registeredIds: string[] = (vocalia?.[side]?.players || []).map(idOf);
     const allTeamPlayers = teamPlayers[teamId] || [];
     const registered = registeredIds
       .map((id) => allTeamPlayers.find((p: any) => p._id === id))
       .filter(Boolean); // objetos completos {_id, names, lastName, jerseyNumber, ...}
 
     const teamEvents = [...events]
-      .filter((e) => e.team === teamId)
+      .filter((e) => idOf(e.team) === teamId)
       .sort((a, b) => a.minute - b.minute);
 
     return (
@@ -352,7 +404,11 @@ export default function VocaliaPage() {
           size="small"
           title={
             <Space>
-              <Avatar src={teamData?.logo} icon={<TeamOutlined />} />
+              <Avatar
+                src={cloudinaryUrl(teamData?.logo, 300, "pad")}
+                size={30}
+                icon={<TeamOutlined />}
+              />
               {teamData?.name}
             </Space>
           }
@@ -380,7 +436,11 @@ export default function VocaliaPage() {
                     key={p._id}
                     className="flex items-center gap-2 py-1 border-b border-gray-300 last:border-b-0"
                   >
-                    <UserOutlined />
+                    <Avatar
+                      src={cloudinaryUrl(p.photo, 70, "face")}
+                      size={35}
+                      icon={<UserOutlined />}
+                    />
                     <span className="text-gray-600">#{p.jerseyNumber}</span>
                     <span>
                       {p.names} {p.lastName}{" "}
@@ -414,28 +474,38 @@ export default function VocaliaPage() {
             <Timeline
               items={teamEvents.map((event) => {
                 const config = EVENT_CONFIG[event.type];
-                const playerId = event.player;
-                const player = (teamPlayers[teamId] || []).find(
-                  (p: any) => p._id === playerId,
-                );
+                const player = findPlayer(teamId, event.player);
+                const playerIn = findPlayer(teamId, event.playerIn);
+                const playerOut = findPlayer(teamId, event.playerOut);
 
                 return {
                   color: config?.color,
                   content: (
                     <div className="flex items-center justify-between">
-                      <Space>
-                        <span style={{ fontSize: 16 }}>{config?.icon}</span>
-                        <span className="font-semibold">
-                          {event.minute}&apos;{" "}
-                        </span>
-                        <span>{config?.label}</span>
-                        {player && (
-                          <Tag icon={<UserOutlined />}>
-                            {player.names} {player.lastName} #
-                            {player.jerseyNumber}
-                          </Tag>
+                      <div className="flex flex-col gap-2">
+                        <Space align="center">
+                          <span style={{ fontSize: 16, lineHeight: 1 }}>
+                            {config?.icon}
+                          </span>
+                          <span className="font-semibold">
+                            {event.minute}&apos;
+                          </span>
+                          <span>{config?.label}</span>
+
+                          {event.type !== "cambio" && player && (
+                            <PlayerChip p={player} />
+                          )}
+                        </Space>
+
+                        {event.type === "cambio" && (
+                          <div className="flex flex-col gap-1 pl-7">
+                            {playerIn && <PlayerChip p={playerIn} arrow="in" />}
+                            {playerOut && (
+                              <PlayerChip p={playerOut} arrow="out" />
+                            )}
+                          </div>
                         )}
-                      </Space>
+                      </div>
                       {!isLocked && (
                         <Space>
                           <Button
@@ -475,7 +545,7 @@ export default function VocaliaPage() {
             <Form.Item label="Capitán" name="captain">
               <Select
                 placeholder="Selecciona un jugador"
-                options={registered
+                options={[...registered]
                   .sort((a, b) => a.jerseyNumber - b.jerseyNumber)
                   .map((p: any) => ({
                     value: p?._id ?? p,
@@ -553,10 +623,9 @@ export default function VocaliaPage() {
               <div className="flex items-center justify-between text-white">
                 <div className="flex flex-col items-center gap-2 flex-1">
                   <Avatar
-                    size={64}
-                    src={match.localTeam?.logo}
+                    src={cloudinaryUrl(match.localTeam?.logo, 300, "pad")}
+                    size={80}
                     icon={<TeamOutlined />}
-                    style={{ border: "3px solid rgba(255,255,255,0.3)" }}
                   />
                   <span className="font-semibold text-center">
                     {match.localTeam?.name}
@@ -621,10 +690,9 @@ export default function VocaliaPage() {
 
                 <div className="flex flex-col items-center gap-2 flex-1">
                   <Avatar
-                    size={64}
-                    src={match.visitorTeam?.logo}
+                    src={cloudinaryUrl(match.visitorTeam?.logo, 300, "pad")}
+                    size={80}
                     icon={<TeamOutlined />}
-                    style={{ border: "3px solid rgba(255,255,255,0.3)" }}
                   />
                   <span className="font-semibold text-center">
                     {match.visitorTeam?.name}
@@ -647,12 +715,6 @@ export default function VocaliaPage() {
                 onFinish={handleSaveReport}
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* <AutoCompleteFast
-                    label="Arbitrador"
-                    name="referee"
-                    endpoint="/referees"
-                    optionLabel={(item: any) => `${item.names}`}
-                  /> */}
                   <Form.Item label="Recaudación" name="income">
                     <InputNumber style={{ width: "100%" }} min={0} prefix="$" />
                   </Form.Item>
@@ -770,7 +832,6 @@ export default function VocaliaPage() {
                 form={eventForm}
                 layout="vertical"
                 onFinish={handleSaveEvent}
-                initialValues={editingEvent}
               >
                 <Form.Item
                   label="Minuto"
@@ -791,6 +852,14 @@ export default function VocaliaPage() {
                 >
                   <Select
                     placeholder="Seleccione un tipo de evento"
+                    onChange={(value) =>
+                      value === "cambio"
+                        ? eventForm.setFieldValue("player", undefined)
+                        : eventForm.setFieldsValue({
+                            playerIn: undefined,
+                            playerOut: undefined,
+                          })
+                    }
                     options={Object.entries(EVENT_CONFIG).map(
                       ([value, cfg]) => ({
                         value,
@@ -812,33 +881,63 @@ export default function VocaliaPage() {
                     ]}
                   />
                 </Form.Item>
-                {equipo && (
-                  <Form.Item label="Jugador" name="player">
+
+                {equipo && tipo !== "cambio" && (
+                  <Form.Item
+                    label="Jugador"
+                    name="player"
+                    rules={[
+                      { required: true, message: "Seleccione un jugador" },
+                    ]}
+                  >
                     <Select
+                      showSearch
+                      optionFilterProp="label"
                       placeholder="Seleccione un jugador"
-                      options={(() => {
-                        const side =
-                          equipo === localTeamId ? "local" : "visitor";
-                        const registeredIds: string[] = (
-                          vocalia?.[side]?.players || []
-                        ).map((p: any) => p?._id ?? p);
-                        const allTeamPlayers = teamPlayers[equipo] || [];
-                        return registeredIds
-                          .map((id) =>
-                            allTeamPlayers.find((p: any) => p._id === id),
-                          )
-                          .filter(Boolean)
-                          .sort(
-                            (a: any, b: any) => a.jerseyNumber - b.jerseyNumber,
-                          )
-                          .map((p: any) => ({
-                            value: p._id,
-                            label: `${p.names} ${p.lastName} - #${p.jerseyNumber}`,
-                          }));
-                      })()}
+                      options={playerOptions}
                     />
                   </Form.Item>
                 )}
+
+                {equipo && tipo === "cambio" && (
+                  <>
+                    <Form.Item
+                      label="Jugador que sale"
+                      name="playerOut"
+                      rules={[
+                        { required: true, message: "Seleccione quién sale" },
+                      ]}
+                    >
+                      <Select
+                        showSearch
+                        optionFilterProp="label"
+                        placeholder="Jugador que sale"
+                        options={playerOptions}
+                      />
+                    </Form.Item>
+                    <Form.Item
+                      label="Jugador que entra"
+                      name="playerIn"
+                      dependencies={["playerOut"]}
+                      rules={[
+                        { required: true, message: "Seleccione quién entra" },
+                        ({ getFieldValue }) => ({
+                          validator: (_, v) =>
+                            v && v === getFieldValue("playerOut")
+                              ? Promise.reject("Debe ser un jugador distinto")
+                              : Promise.resolve(),
+                        }),
+                      ]}
+                    >
+                      <Select
+                        showSearch
+                        placeholder="Jugador que entra"
+                        options={playerOptions}
+                      />
+                    </Form.Item>
+                  </>
+                )}
+
                 <Form.Item label="Observaciones" name="observations">
                   <Input.TextArea rows={2} placeholder="Observaciones" />
                 </Form.Item>
