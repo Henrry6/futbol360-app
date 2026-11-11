@@ -1,9 +1,9 @@
 "use client";
 
 import { Drawer, Grid, Layout } from "antd";
-import { adminMenu } from "@/assets/menus";
+import { adminMenu, getMenuByRoles, masterMenu } from "@/assets/menus";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MenuOutlined } from "@ant-design/icons";
 import { useAuthStore } from "@/services/store";
 import AppHeader from "@/components/layout/AppHeader";
@@ -24,6 +24,13 @@ export default function LayoutAdmin({
   const token = useAuthStore((state) => state.token);
   const isAdmin = useAuthStore((state) => state.isAdmin);
   const isMobileMd = !screens.lg;
+  const isMaster = useAuthStore((state) => state.isMaster);
+  const user = useAuthStore((state) => state.user);
+
+  const menuItems = useMemo(
+    () => getMenuByRoles(user?.roles ?? []),
+    [user?.roles],
+  );
 
   useEffect(() => {
     if (!token) {
@@ -51,7 +58,10 @@ export default function LayoutAdmin({
             borderRight: "1px solid #E5E7EB",
           }}
         >
-          <AppSidebar subtitle="ADMIN" items={adminMenu} />
+          <AppSidebar
+            subtitle={isMaster ? "MASTER" : "ADMIN"}
+            items={menuItems}
+          />
         </Sider>
       )}
 

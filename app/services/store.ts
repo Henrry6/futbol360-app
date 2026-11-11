@@ -22,6 +22,7 @@ interface AuthStore {
   user: User | null;
   loginType: "admin" | "user" | null;
   isAdmin: boolean;
+  isMaster: boolean;
   bitacora: Movement[];
   setBitacora: (movements: Movement[]) => void;
   setHydrated: (value: boolean) => void;
@@ -38,6 +39,7 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       loginType: null,
       isAdmin: false,
+      isMaster: false,
       bitacora: [],
       setBitacora: (movements) => set({ bitacora: movements }),
 
@@ -51,7 +53,8 @@ export const useAuthStore = create<AuthStore>()(
           token,
           user,
           loginType,
-          isAdmin: user.roles.includes("master"),
+          isMaster: user.roles.includes("master"),
+          isAdmin: user.roles.includes("admin"),
         }),
 
       logout: () =>
