@@ -9,6 +9,8 @@ export interface StandingRow {
   team: string;
   name: string;
   logo?: string;
+  // Solo en etapas de grupos ("A", "B"…); `position` es dentro del grupo
+  group?: string;
   played: number;
   wins: number;
   draws: number;
@@ -53,7 +55,7 @@ export function TablaPosiciones({
 
   const columns = [
     {
-      title: <HeaderTip label="#" tip="Posición en la tabla" />,
+      title: <HeaderTip label="#" tip="Posición en la tabla (o en el grupo)" />,
       dataIndex: "position",
       key: "position",
       width: 48,
@@ -160,16 +162,37 @@ export function TablaPosiciones({
     return <Empty description="Sin datos de posiciones" />;
   }
 
+  // Fase de grupos: la API devuelve todos los grupos ordenados (A, B…);
+  // se muestra una tabla por grupo.
+  const groups = data.some((row) => row.group)
+    ? [...new Set(data.map((row) => row.group ?? ""))].map((group) => ({
+        group,
+        rows: data.filter((row) => (row.group ?? "") === group),
+      }))
+    : [{ group: "", rows: data }];
+
   return (
     <Spin spinning={isLoading}>
       <Typography.Title level={4}>Tabla de posiciones</Typography.Title>
-      <Table
-        rowKey="team"
-        size={size}
-        columns={columns}
-        dataSource={data}
-        pagination={false}
-      />
+      <div className="space-y-6">
+        {groups.map(({ group, rows }) => (
+          <div key={group || "general"}>
+            {group && (
+              <Typography.Title level={5} className="mb-2!">
+                Grupo {group}
+              </Typography.Title>
+            )}
+            <Table
+              rowKey="team"
+              size={size}
+              columns={columns}
+              dataSource={rows}
+              pagination={false}
+              scroll={{ x: "max-content" }}
+            />
+          </div>
+        ))}
+      </div>
     </Spin>
   );
 }

@@ -23,6 +23,7 @@ import {
   Tabs,
   Empty,
   Popconfirm,
+  Tag,
 } from "antd";
 import {
   EyeOutlined,
@@ -65,6 +66,8 @@ const getMatchesKey = (championshipId?: string, roundId?: string) =>
 interface RoundMatchesProps {
   championshipId: string;
   roundId: string;
+  // La etapa es de eliminación directa (los empates necesitan penales)
+  isKnockout?: boolean;
   onStartMatch: (record: any) => void;
   onRevertStart: (record: any) => void;
 }
@@ -72,6 +75,7 @@ interface RoundMatchesProps {
 function RoundMatches({
   championshipId,
   roundId,
+  isKnockout,
   onStartMatch,
   onRevertStart,
 }: RoundMatchesProps) {
@@ -113,14 +117,49 @@ function RoundMatches({
             align: "center",
             width: 140,
             render: (_, record: any) => {
+              // Grupo (fase de grupos) o partido por el tercer lugar (knockout)
+              const badge = record.group ? (
+                <Tag>Grupo {record.group}</Tag>
+              ) : record.isThirdPlaceMatch ? (
+                <Tag color="orange">Tercer lugar</Tag>
+              ) : null;
+
               if (record.status !== "programado") {
-                return `${record.localGoals ?? 0} - ${record.visitorGoals ?? 0}`;
+                return (
+                  <Space orientation="vertical" size={0}>
+                    {badge}
+                    <span>
+                      {record.localGoals ?? 0} - {record.visitorGoals ?? 0}
+                    </span>
+                    {typeof record.localPenalties === "number" ? (
+                      <span style={{ fontSize: 12, color: "#6b7280" }}>
+                        Penales {record.localPenalties} -{" "}
+                        {record.visitorPenalties}
+                      </span>
+                    ) : (
+                      isKnockout &&
+                      (record.status === "finalizado" ||
+                        record.status === "suspendido") &&
+                      (record.localGoals ?? 0) ===
+                        (record.visitorGoals ?? 0) && (
+                        <Tag color="red" title="Abra la vocalía (Ver) para registrar los penales">
+                          Empate sin penales
+                        </Tag>
+                      )
+                    )}
+                  </Space>
+                );
               }
 
               const isScheduled = record.date && record.hour && record.vocal;
 
               if (!isScheduled) {
-                return "vs";
+                return (
+                  <Space orientation="vertical" size={0}>
+                    {badge}
+                    <span>vs</span>
+                  </Space>
+                );
               }
 
               return (
@@ -129,6 +168,7 @@ function RoundMatches({
                   size={0}
                   style={{ lineHeight: 1.3 }}
                 >
+                  {badge}
                   <span>{dayjs(record.date).format("DD/MM/YYYY")}</span>
                   <span style={{ color: "green" }}>
                     {dayjs(record.hour).format("HH:mm A")}
@@ -242,7 +282,15 @@ export default function GestionCampeonato() {
     isLoading: loading,
     mutate: mutateCampeonato,
   } = useSWR(getCampeonatoKey(id as string), () =>
-    api.get(`/championships/${id}`).then((res) => res.data),
+    api
+      .get(`/championships/${id}`, {
+        params: {
+          // Podio poblado para mostrar el cierre del campeonato
+          fields:
+            "name status stages champion { name logo } runnerUp { name logo } thirdPlace { name logo }",
+        },
+      })
+      .then((res) => res.data),
   );
 
   useEffect(() => {
@@ -345,6 +393,32 @@ export default function GestionCampeonato() {
       />
       <Spin spinning={loading}>
         <div style={{ width: "100%" }}>
+          {campeonato?.status === "finalizado" && (
+            <Card title="🏆 Campeonato finalizado" className="mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { label: "🥇 Campeón", team: campeonato.champion },
+                  { label: "🥈 Subcampeón", team: campeonato.runnerUp },
+                  { label: "🥉 Tercer lugar", team: campeonato.thirdPlace },
+                ].map(({ label, team }) => (
+                  <div
+                    key={label}
+                    className="border rounded p-4 flex items-center gap-3"
+                  >
+                    <Avatar
+                      src={cloudinaryUrl(team?.logo, 100, "pad")}
+                      size={48}
+                      icon={<TeamOutlined />}
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-500">{label}</span>
+                      <strong>{team?.name ?? "—"}</strong>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
           {currentStage && (
             <Card
               title="Información de la etapa"
@@ -409,10 +483,14 @@ export default function GestionCampeonato() {
                     Clasifican: <strong>{currentStage.qualifyTeams}</strong>
                   </div>
                 </div>
-                <TablaPosiciones
-                  championshipId={id as string}
-                  stageId={currentStage._id}
-                />
+                {currentStage.mode === "knockout" ? (
+                  <Empty description="Eliminación directa: sin tabla de posiciones. Los ganadores avanzan automáticamente a la siguiente ronda." />
+                ) : (
+                  <TablaPosiciones
+                    championshipId={id as string}
+                    stageId={currentStage._id}
+                  />
+                )}
               </div>
             </Card>
           )}
@@ -452,6 +530,7 @@ export default function GestionCampeonato() {
                           <RoundMatches
                             championshipId={id as string}
                             roundId={round._id}
+                            isKnockout={stage.mode === "knockout"}
                             onStartMatch={handleStartMatch}
                             onRevertStart={handleRevertStart}
                           />

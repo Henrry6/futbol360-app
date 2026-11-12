@@ -57,9 +57,13 @@ export interface Championship {
     name: string;
   };
   // Subcampeón
-  runnerUp?: string;
+  runnerUp?: {
+    name: string;
+  };
   // Tercer lugar
-  thirdPlace?: string;
+  thirdPlace?: {
+    name: string;
+  };
   // Estado
   status: "planificado" | "activo" | "finalizado" | "cancelado";
   observations?: string;
@@ -73,8 +77,8 @@ export default function CampeonatosPage() {
   const { data, loading, refresh, setSearch } = useVistaIndex<Championship>({
     endpoint: "/championships",
     params: {
-      fields: `name league category {name} teams stages currentStage champion \
-runnerUp thirdPlace status observations type startDate endDate season`,
+      fields: `name league category {name} teams stages currentStage champion {name} \
+runnerUp {name} thirdPlace {name} status observations type startDate endDate season`,
     },
   });
 
@@ -183,6 +187,22 @@ runnerUp thirdPlace status observations type startDate endDate season`,
                         {
                           label: "🥇 Campeón",
                           children: championship.champion.name,
+                        },
+                      ]
+                    : []),
+                  ...(championship.runnerUp
+                    ? [
+                        {
+                          label: "🥈 Subcampeón",
+                          children: championship.runnerUp.name,
+                        },
+                      ]
+                    : []),
+                  ...(championship.thirdPlace
+                    ? [
+                        {
+                          label: "🥉 Tercero",
+                          children: championship.thirdPlace.name,
                         },
                       ]
                     : []),

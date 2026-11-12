@@ -27,11 +27,23 @@ actualiza `SPEC.md` §6 allí.
 - `npx tsc --noEmit` — chequeo de tipos rápido
 - No hay tests.
 
-## Variables de entorno (`.env`, ver `.env.example`)
-- `NEXT_PUBLIC_API_URL` — URL de la API. Si existe, axios llama **directo** a ella desde el
-  navegador (no pasa por el rewrite). Si no existe, usa `/api`, que `next.config.ts` reescribe a
-  `http://localhost:5001`.
-- `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` — para construir URLs de imágenes.
+## Variables de entorno y entornos
+Next carga los archivos según el modo (el primero gana):
+
+| Archivo | Versionado | Lo carga | Contenido |
+|---|---|---|---|
+| `.env.development` | sí | `npm run dev` | `NEXT_PUBLIC_API_URL=http://localhost:5001` (API local → base local) |
+| `.env.production` | sí | `npm run build` / `npm start` | `NEXT_PUBLIC_API_URL=https://futbol360-api.onrender.com` |
+| `.env` | no | ambos | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` (ver `.env.example`) |
+| `.env.local` | no | ambos, con prioridad | overrides personales; no lo uses para apuntar dev a producción |
+
+- `NEXT_PUBLIC_API_URL` — URL de la API; axios la llama **directo** desde el navegador.
+  Sin valor usa `/api`, que `next.config.ts` reescribe a `http://localhost:5001`.
+  **No pongas `NEXT_PUBLIC_API_URL` en `.env`**: se cargaría también en desarrollo.
+  En desarrollo, `services/api.ts` avisa en la consola si apunta a una API que no es local.
+- Las variables del panel del hosting tienen prioridad sobre los archivos.
+- `NEXT_PUBLIC_*` se incrusta al compilar: tras cambiar un `.env*`, reinicia `npm run dev`.
+- La API local (`futbol360-api`, `npm run dev`) usa `MONGO_URI` de su `.env` → `mongodb://localhost:27017/futbol360`.
 
 ## Estructura real
 ```

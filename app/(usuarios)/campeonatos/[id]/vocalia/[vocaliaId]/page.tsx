@@ -9,6 +9,7 @@ import { cloudinaryUrl } from "@/libs/cloudinary";
 import { BotonMovimientos } from "@/components/Movements";
 import { ContadorMinutos } from "@/components/campeonato/ContadorMinutos";
 import { useShowError, useShowMessage } from "@/components/utils/ShowError";
+import { useAuthStore } from "@/services/store";
 import {
   Card,
   Tag,
@@ -27,6 +28,7 @@ import {
   Spin,
   Popconfirm,
   TimePicker,
+  Alert,
 } from "antd";
 import {
   TeamOutlined,
@@ -42,10 +44,16 @@ import dayjs from "dayjs";
 
 const EVENT_CONFIG: Record<
   string,
-  { label: string; color: string; icon: string }
+  { label: string; color: string; icon: string; legacy?: boolean }
 > = {
   gol: { label: "Gol", color: "#16a34a", icon: "⚽" },
-  penal_fallado: { label: "Penal fallado", color: "#94a3b8", icon: "❌" },
+  // Ya no se puede registrar (la API lo quitó); solo para mostrar eventos antiguos
+  penal_fallado: {
+    label: "Penal fallado",
+    color: "#94a3b8",
+    icon: "❌",
+    legacy: true,
+  },
   tarjeta_amarilla: { label: "Amarilla", color: "#eab308", icon: "🟨" },
   tarjeta_roja: { label: "Roja", color: "#dc2626", icon: "🟥" },
   cambio: { label: "Cambio", color: "#3b82f6", icon: "🔁" },
@@ -92,13 +100,29 @@ export default function VocaliaPage() {
   // cache de jugadores por equipo
   const [teamPlayers, setTeamPlayers] = useState<Record<string, any[]>>({});
 
+  // Definición por penales (eliminación directa con empate):
+  // "finalizado"/"suspendido" → al cerrar la vocalía; "corregir" → partido ya cerrado
+  const [penaltiesStatus, setPenaltiesStatus] = useState<
+    "finalizado" | "suspendido" | "corregir" | null
+  >(null);
+  const [penaltiesForm] = Form.useForm();
+  // Modo de la etapa: los partidos knockout antiguos no tienen bracketPosition
+  const [stageMode, setStageMode] = useState<string>();
+  // Corregir penales de un partido cerrado es una acción administrativa
+  const canCorrectPenalties = useAuthStore((state) =>
+    state.hasRole(["admin", "directivo"]),
+  );
+
   const finishReport = async (values: {
     status: "finalizado" | "suspendido";
+    localPenalties?: number;
+    visitorPenalties?: number;
   }) => {
     try {
       setSaving(true);
       await api.post(`/matchs-reports/${vocaliaId}/finalizar`, values);
       setFinishResult({ status: values.status });
+      setPenaltiesStatus(null);
     } catch (error) {
       ShowError(error);
     } finally {
@@ -145,6 +169,14 @@ export default function VocaliaPage() {
         },
       });
       setVocalia(data);
+      if (data.championship) {
+        const { data: stages } = await api.get(
+          `/championships/${idOf(data.championship)}/stages`,
+        );
+        setStageMode(
+          stages.find((s: any) => s._id === idOf(data.stage))?.mode,
+        );
+      }
       if (data.match) {
         const { data: partido } = await api.get(`/matchs/${data.match}`);
         setPartido(partido);
@@ -333,9 +365,68 @@ export default function VocaliaPage() {
   const localTeamId = match.localTeam?._id ?? match.localTeam;
   const visitorTeamId = match.visitorTeam?._id ?? match.visitorTeam;
 
-  // Marcador calculado por la API (considera autogoles y penales)
+  // Marcador calculado por la API a partir de los eventos "gol"
   const localGoals = match.localGoals ?? 0;
   const visitorGoals = match.visitorGoals ?? 0;
+
+  // Partido de eliminación directa: por el modo de la etapa o, en partidos
+  // generados con la lógica nueva, por su posición en la llave
+  const isKnockout =
+    stageMode === "knockout" ||
+    (match.bracketPosition !== undefined && match.bracketPosition !== null);
+  const isTie = localGoals === visitorGoals;
+  const hasPenalties = typeof match.localPenalties === "number";
+
+  // En eliminación directa un empate se define por penales antes de cerrar
+  const requestFinish = (status: "finalizado" | "suspendido") => {
+    if (isKnockout && localGoals === visitorGoals) {
+      setPenaltiesStatus(status);
+      return;
+    }
+    finishReport({ status });
+  };
+
+  const openPenaltiesCorrection = () => {
+    penaltiesForm.setFieldsValue({
+      localPenalties: match.localPenalties,
+      visitorPenalties: match.visitorPenalties,
+    });
+    setPenaltiesStatus("corregir");
+  };
+
+  // Partido ya cerrado: PUT /matchs/:id/penalties (valida y hace avanzar la etapa)
+  const correctPenalties = async (values: {
+    localPenalties: number;
+    visitorPenalties: number;
+  }) => {
+    try {
+      setSaving(true);
+      const { data } = await api.put(
+        `/matchs/${match._id}/penalties`,
+        values,
+      );
+      setPenaltiesStatus(null);
+      if (data.warning) {
+        message(`Penales guardados. ${data.warning}`, "warning");
+      } else {
+        message("Penales guardados");
+      }
+      await load();
+    } catch (error) {
+      ShowError(error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const submitPenalties = async () => {
+    const values = await penaltiesForm.validateFields();
+    if (penaltiesStatus === "corregir") {
+      await correctPenalties(values);
+    } else {
+      await finishReport({ status: penaltiesStatus!, ...values });
+    }
+  };
 
   const findPlayer = (teamId: string, id: any) =>
     id
@@ -650,6 +741,11 @@ export default function VocaliaPage() {
                   <div className="text-5xl font-bold tracking-wide">
                     {localGoals} - {visitorGoals}
                   </div>
+                  {typeof match.localPenalties === "number" && (
+                    <span className="text-sm opacity-80">
+                      Penales {match.localPenalties} - {match.visitorPenalties}
+                    </span>
+                  )}
 
                   <ContadorMinutos
                     startTime={vocalia?.startTime}
@@ -700,6 +796,34 @@ export default function VocaliaPage() {
                 </div>
               </div>
             </Card>
+
+            {/* Knockout cerrado en empate: registrar o corregir penales */}
+            {isLocked && isKnockout && isTie && (
+              <Alert
+                showIcon
+                type={hasPenalties ? "info" : "warning"}
+                title={
+                  hasPenalties
+                    ? `Definido por penales: ${match.localTeam?.name} ${match.localPenalties} - ${match.visitorPenalties} ${match.visitorTeam?.name}`
+                    : "Partido de eliminación directa empatado sin penales"
+                }
+                description={
+                  hasPenalties
+                    ? "Si el resultado de la tanda está mal, puede corregirlo. No se permite cambiar al ganador si ya se generó la siguiente ronda o etapa."
+                    : "Sin la tanda de penales no se puede definir quién avanza: registre el resultado para continuar con la siguiente ronda o etapa."
+                }
+                action={
+                  canCorrectPenalties && (
+                    <Button
+                      type={hasPenalties ? "default" : "primary"}
+                      onClick={openPenaltiesCorrection}
+                    >
+                      {hasPenalties ? "Corregir penales" : "Registrar penales"}
+                    </Button>
+                  )
+                }
+              />
+            )}
 
             {/* Dos columnas por equipo */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -756,7 +880,7 @@ export default function VocaliaPage() {
                         okText="Suspender"
                         okButtonProps={{ danger: true }}
                         cancelText="Cancelar"
-                        onConfirm={() => finishReport({ status: "suspendido" })}
+                        onConfirm={() => requestFinish("suspendido")}
                       >
                         <Button danger icon={<StopOutlined />}>
                           Suspender
@@ -768,7 +892,7 @@ export default function VocaliaPage() {
                         description="¿Seguro que deseas finalizar este partido? El acta quedará cerrada."
                         okText="Finalizar"
                         cancelText="Cancelar"
-                        onConfirm={() => finishReport({ status: "finalizado" })}
+                        onConfirm={() => requestFinish("finalizado")}
                       >
                         <Button
                           type="primary"
@@ -783,6 +907,66 @@ export default function VocaliaPage() {
                 )}
               </Form>
             </Card>
+
+            {/* Modal de penales (eliminación directa con empate) */}
+            <Modal
+              title={
+                penaltiesStatus === "corregir"
+                  ? "Penales del partido"
+                  : "Definición por penales"
+              }
+              open={penaltiesStatus !== null}
+              forceRender
+              okText={
+                penaltiesStatus === "corregir"
+                  ? "Guardar penales"
+                  : penaltiesStatus === "suspendido"
+                    ? "Suspender partido"
+                    : "Finalizar partido"
+              }
+              cancelText="Cancelar"
+              confirmLoading={saving}
+              onOk={submitPenalties}
+              onCancel={() => setPenaltiesStatus(null)}
+              afterClose={() => penaltiesForm.resetFields()}
+            >
+              <p className="mb-4 text-gray-600">
+                El partido terminó {localGoals} - {visitorGoals}. En
+                eliminación directa debe haber un ganador: registre el
+                resultado de la tanda de penales.
+              </p>
+              <Form form={penaltiesForm} layout="vertical">
+                <div className="grid grid-cols-2 gap-4">
+                  <Form.Item
+                    label={match.localTeam?.name ?? "Local"}
+                    name="localPenalties"
+                    rules={[{ required: true, message: "Requerido" }]}
+                  >
+                    <InputNumber min={0} max={99} style={{ width: "100%" }} />
+                  </Form.Item>
+                  <Form.Item
+                    label={match.visitorTeam?.name ?? "Visitante"}
+                    name="visitorPenalties"
+                    dependencies={["localPenalties"]}
+                    rules={[
+                      { required: true, message: "Requerido" },
+                      ({ getFieldValue }) => ({
+                        validator: (_, value) =>
+                          value === undefined ||
+                          value === null ||
+                          value !== getFieldValue("localPenalties")
+                            ? Promise.resolve()
+                            : Promise.reject(
+                                new Error("Los penales no pueden empatar"),
+                              ),
+                      }),
+                    ]}
+                  >
+                    <InputNumber min={0} max={99} style={{ width: "100%" }} />
+                  </Form.Item>
+                </div>
+              </Form>
+            </Modal>
 
             {/* Modal de jugadores por equipo */}
             <Modal
@@ -860,12 +1044,12 @@ export default function VocaliaPage() {
                             playerOut: undefined,
                           })
                     }
-                    options={Object.entries(EVENT_CONFIG).map(
-                      ([value, cfg]) => ({
+                    options={Object.entries(EVENT_CONFIG)
+                      .filter(([, cfg]) => !cfg.legacy)
+                      .map(([value, cfg]) => ({
                         value,
                         label: `${cfg.icon} ${cfg.label}`,
-                      }),
-                    )}
+                      }))}
                   />
                 </Form.Item>
                 <Form.Item

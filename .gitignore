@@ -30,9 +30,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
+# Se versionan solo los que no tienen secretos (URLs públicas por modo).
+# .env y .env*.local son locales de cada desarrollador.
 .env*
 !.env.example
+!.env.development
+!.env.production
 
 # vercel
 .vercel
