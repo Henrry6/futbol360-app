@@ -37,6 +37,11 @@ export const adminMenu: MenuItem[] = [
     label: "Inicio",
   },
   {
+    key: "/leagues",
+    icon: <TrophyOutlined />,
+    label: "Ligas",
+  },
+  {
     key: "/usuarios",
     icon: <UserOutlined />,
     label: "Usuarios",

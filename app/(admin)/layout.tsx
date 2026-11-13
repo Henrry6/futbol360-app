@@ -1,7 +1,7 @@
 "use client";
 
 import { Drawer, Grid, Layout } from "antd";
-import { adminMenu, getMenuByRoles, masterMenu } from "@/assets/menus";
+import { getMenuByRoles } from "@/assets/menus";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { MenuOutlined } from "@ant-design/icons";
@@ -32,18 +32,21 @@ export default function LayoutAdmin({
     [user?.roles],
   );
 
+  // Área de administración: master (gestiona ligas y usuarios) y admin
+  const canAccess = isAdmin || isMaster;
+
   useEffect(() => {
     if (!token) {
       router.replace("/login");
       return;
     }
 
-    if (token && !isAdmin) {
-      router.replace("/");
+    if (!canAccess) {
+      router.replace("/dashboard");
     }
-  }, [token, isAdmin, router]);
+  }, [token, canAccess, router]);
 
-  if (!token) {
+  if (!token || !canAccess) {
     return null;
   }
 
@@ -111,7 +114,11 @@ export default function LayoutAdmin({
           background: "#DCFCE7",
         }}
       >
-        <AppSidebar subtitle="ADMIN" items={adminMenu} showHeader={false} />
+        <AppSidebar
+          subtitle={isMaster ? "MASTER" : "ADMIN"}
+          items={menuItems}
+          showHeader={false}
+        />
       </Drawer>
 
       <Bitacora />

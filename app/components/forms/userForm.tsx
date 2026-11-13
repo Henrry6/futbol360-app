@@ -11,6 +11,7 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
   const ShowError = useShowError();
   const form = Form.useFormInstance();
   const user = useAuthStore((state) => state.user);
+  const isMaster = useAuthStore((state) => state.isMaster);
 
   const [selectLeagues, setLeagues] = useState<League[]>([]);
   const loadLeagues = async () => {
@@ -80,7 +81,10 @@ export default function UserForm({ isEdit = false }: { isEdit?: boolean }) {
             { value: "directivo", label: "Directivo" },
             { value: "player", label: "Jugador" },
             { value: "official", label: "Oficial" },
-          ].filter((role) => role.value !== "master" || !user?.league)}
+          ].filter(
+            // Solo un master puede asignar el rol master (fuera de una liga).
+            (role) => role.value !== "master" || (isMaster && !user?.league),
+          )}
           onChange={(value: string[]) => {
             if (!value.includes("official")) {
               form.setFieldValue("official", undefined);

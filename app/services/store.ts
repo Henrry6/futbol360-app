@@ -63,6 +63,7 @@ export const useAuthStore = create<AuthStore>()(
           user: null,
           loginType: null,
           isAdmin: false,
+          isMaster: false,
         }),
 
       hasRole: (roles) => {

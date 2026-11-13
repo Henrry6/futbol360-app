@@ -1,10 +1,12 @@
 "use client";
 
 import api from "@/services/api";
-import { Table, Tag, Space } from "antd";
 import { useEffect, useState } from "react";
 import CrudModal from "@/components/CrudModal";
+import { canModifyUser } from "@/assets/users";
 import { useAuthStore } from "@/services/store";
+import { LockOutlined } from "@ant-design/icons";
+import { Table, Tag, Space, Tooltip } from "antd";
 import UserForm from "@/components/forms/userForm";
 import DeleteButton from "@/components/DeleteButton";
 import { useShowError } from "@/components/utils/ShowError";
@@ -16,7 +18,7 @@ export interface User {
   username: string;
   email: string;
   password: string;
-  role: "master" | "admin" | "directivo" | "player";
+  roles: ("master" | "admin" | "directivo" | "player" | "official")[];
   leagues: string[];
   status: "activo" | "inactivo";
   _movements: any[];
@@ -26,6 +28,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const hasRole = useAuthStore((state) => state.hasRole);
+  const me = useAuthStore((state) => state.user);
   const showError = useShowError();
 
   const init = async () => {
@@ -89,24 +92,33 @@ export default function UsersPage() {
             title: "Acciones",
             render: (_: any, user: User) => (
               <Space>
-                <CrudModal
-                  title="Editar Usuario"
-                  buttonText="Editar"
-                  endpoint="/users"
-                  mode="edit"
-                  id={user._id}
-                  initialValues={user}
-                  onSuccess={init}
-                >
-                  <UserForm isEdit />
-                </CrudModal>
+                {/* Un master solo puede ser modificado por él mismo (la API responde 403). */}
+                {canModifyUser(user, me?.id) ? (
+                  <>
+                    <CrudModal
+                      title="Editar Usuario"
+                      buttonText="Editar"
+                      endpoint="/users"
+                      mode="edit"
+                      id={user._id}
+                      initialValues={user}
+                      onSuccess={init}
+                    >
+                      <UserForm isEdit />
+                    </CrudModal>
 
-                <DeleteButton
-                  endpoint="/users"
-                  id={user._id}
-                  title={`¿Eliminar usuario ${user.name}?`}
-                  onSuccess={init}
-                />
+                    <DeleteButton
+                      endpoint="/users"
+                      id={user._id}
+                      title={`¿Eliminar usuario ${user.name}?`}
+                      onSuccess={init}
+                    />
+                  </>
+                ) : (
+                  <Tooltip title="Solo el propio usuario master puede modificar su información">
+                    <Tag icon={<LockOutlined />}>Solo lectura</Tag>
+                  </Tooltip>
+                )}
                 <BotonMovimientos movimientos={user._movements} />
               </Space>
             ),
